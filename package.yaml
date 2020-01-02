@@ -25,7 +25,7 @@ dependencies:
 library:
   source-dirs: src
   dependencies:
-  - linear
+  - hmatrix
 
 executables:
   mlToolBox-exe:
@@ -37,6 +37,7 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - mlToolBox
+    - hmatrix
 
 tests:
   mlToolBox-test:
