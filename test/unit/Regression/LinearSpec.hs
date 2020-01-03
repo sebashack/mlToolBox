@@ -10,10 +10,11 @@ import Test.Tasty (TestTree)
 import Test.Tasty (testGroup)
 import Test.Tasty.Hspec (Spec, describe, it, shouldSatisfy, testSpecs)
 
-import Numeric.LinearAlgebra.Data (Matrix, R, Vector)
-
-import Regression.Linear
-  ( addOnesColumn
+import ToolBox
+  ( Matrix
+  , R
+  , Vector
+  , addOnesColumn
   , computeCostFunction
   , splitMatrixOfSamples
   , toMatrix
