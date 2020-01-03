@@ -16,7 +16,9 @@ import ToolBox
   , Vector
   , addOnesColumn
   , computeCostFunction
+  , featureNormalize
   , splitMatrixOfSamples
+  , toListMatrix
   , toMatrix
   , toVector
   )
@@ -25,13 +27,15 @@ tests :: IO TestTree
 tests = do
   curDir <- getCurrentDirectory
   let dataDir = curDir </> "testData"
-  (linearRegressionMatrix, linearRegressionValues) <-
+  (linearRegressionMatrix, normalizedLrMatrix, linearRegressionValues) <-
     readLinearRegressionSample dataDir
   specs <-
     concat <$>
     mapM
       testSpecs
-      [costFunctionSpec linearRegressionMatrix linearRegressionValues]
+      [ costFunctionSpec linearRegressionMatrix linearRegressionValues
+      , featureNormalizeSpec linearRegressionMatrix normalizedLrMatrix
+      ]
   return $
     testGroup "LinearRegression" [testGroup "Linear Regression specs" specs]
 
@@ -60,15 +64,34 @@ costFunctionSpec features values =
           expectedValue = 88102482793.02190
       r `shouldSatisfy` doubleEq expectedValue
 
+featureNormalizeSpec :: Matrix R -> Matrix R -> Spec
+featureNormalizeSpec features expectedMatrix =
+  describe "featureNormalize" $ do
+    it "correctly normalizes the matrix values" $ do
+      let normalizedMatrix = featureNormalize features
+      normalizedMatrix `shouldSatisfy` (matrixEq expectedMatrix)
+
 -- Helpers
-readLinearRegressionSample :: FilePath -> IO (Matrix R, Vector R)
+readLinearRegressionSample :: FilePath -> IO (Matrix R, Matrix R, Vector R)
 readLinearRegressionSample dataDir = do
   let linearRegressionFile = dataDir </> "linearRegression.csv"
   linearRegressionData <- decode NoHeader <$> LB.readFile linearRegressionFile
   let (features, vals) =
         splitMatrixOfSamples . V.toList . fromRight V.empty $
         linearRegressionData
-  return (toMatrix . addOnesColumn $ features, toVector vals)
+  let normalizedDataFile = dataDir </> "lrFeatureNormalize.csv"
+  normalizedLrData <- decode NoHeader <$> LB.readFile normalizedDataFile
+  let normalizedFeatures =
+        toMatrix . addOnesColumn . V.toList . fromRight V.empty $
+        normalizedLrData
+  return
+    (toMatrix . addOnesColumn $ features, normalizedFeatures, toVector vals)
 
 doubleEq :: Double -> Double -> Bool
 doubleEq r1 r2 = abs (r1 - r2) <= 0.0001
+
+matrixEq :: Matrix R -> Matrix R -> Bool
+matrixEq mx1 mx2 =
+  let valsMx1 = concat $ toListMatrix mx1
+      valsMx2 = concat $ toListMatrix mx2
+   in all (\(v1, v2) -> doubleEq v1 v2) $ zip valsMx1 valsMx2

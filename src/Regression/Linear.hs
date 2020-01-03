@@ -6,6 +6,7 @@ module Regression.Linear
   , toMatrix
   , toVector
   , featureNormalize
+  , toListMatrix
   ) where
 
 import Numeric.LinearAlgebra (( #> ), (<.>), (?), add)
@@ -78,10 +79,16 @@ featureNormalize mx =
       let (mean, n) = computeMean vals
           std = computeStd n mean vals
        in (mean, std)
-    normalize mean std val = (val - mean) / std
+    normalize mean std val =
+      if std == 0
+        then mean
+        else (val - mean) / std
 
 toMatrix :: ListMatrix -> Matrix R
 toMatrix = fromLists
+
+toListMatrix :: Matrix R -> ListMatrix
+toListMatrix = toLists
 
 toVector :: ListVector -> Vector R
 toVector = fromList
