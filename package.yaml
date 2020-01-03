@@ -36,16 +36,28 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - mlToolBox
     - hmatrix
+    - mlToolBox
 
 tests:
   mlToolBox-test:
     main:                Spec.hs
-    source-dirs:         test
+    source-dirs:         test/unit
     ghc-options:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
+    - bytestring
+    - cassava
+    - directory
+    - filepath
+    - hedgehog
+    - hmatrix
     - mlToolBox
+    - tasty
+    - tasty-hedgehog
+    - tasty-hspec
+    - tasty-hunit
+    - tasty-quickcheck
+    - vector
