@@ -17,8 +17,10 @@ import ToolBox
   , addOnesColumn
   , computeCostFunction
   , featureNormalize
+  , gradientDescent
   , splitMatrixOfSamples
   , toListMatrix
+  , toListVector
   , toMatrix
   , toVector
   )
@@ -35,6 +37,7 @@ tests = do
       testSpecs
       [ costFunctionSpec linearRegressionMatrix linearRegressionValues
       , featureNormalizeSpec linearRegressionMatrix normalizedLrMatrix
+      , gradientDescentSpec linearRegressionMatrix linearRegressionValues
       ]
   return $
     testGroup "LinearRegression" [testGroup "Linear Regression specs" specs]
@@ -71,6 +74,53 @@ featureNormalizeSpec features expectedMatrix =
       let normalizedMatrix = featureNormalize features
       normalizedMatrix `shouldSatisfy` (matrixEq expectedMatrix)
 
+gradientDescentSpec :: Matrix R -> Vector R -> Spec
+gradientDescentSpec features values = do
+  it
+    "should compute correctly for theta starting at [0, 0, 0], alpha = 0.1 and 50 iterations" $ do
+    let theta =
+          gradientDescent
+            (featureNormalize features)
+            values
+            (toVector [0, 0, 0])
+            0.1
+            50
+        expectedTheta = toVector [338658.24925, 104127.51560, -172.20533]
+    theta `shouldSatisfy` (vectorEq expectedTheta)
+  it
+    "should compute correctly for theta starting at [0, 0, 0], alpha = 0.01 and 500 iterations" $ do
+    let theta =
+          gradientDescent
+            (featureNormalize features)
+            values
+            (toVector [0, 0, 0])
+            0.01
+            500
+        expectedTheta = toVector [338175.98397, 103831.11737, 103.03073]
+    theta `shouldSatisfy` (vectorEq expectedTheta)
+  it
+    "should compute correctly for theta starting at [0, 0, 0], alpha = 0.001 and 1000 iterations" $ do
+    let theta =
+          gradientDescent
+            (featureNormalize features)
+            values
+            (toVector [0, 0, 0])
+            0.001
+            1000
+        expectedTheta = toVector [215244.48211, 61233.08697, 20186.40938]
+    theta `shouldSatisfy` (vectorEq expectedTheta)
+  it "decreases the value of the cost function the more iterations are computed" $ do
+    let computeTheta =
+          gradientDescent
+            (featureNormalize features)
+            values
+            (toVector [0, 0, 0])
+            0.01
+        costFValues =
+          computeCostFunction features values . computeTheta <$>
+          (take 100 $ iterate (+ 10) 1)
+    costFValues `shouldSatisfy` isDescending
+
 -- Helpers
 readLinearRegressionSample :: FilePath -> IO (Matrix R, Matrix R, Vector R)
 readLinearRegressionSample dataDir = do
@@ -95,3 +145,13 @@ matrixEq mx1 mx2 =
   let valsMx1 = concat $ toListMatrix mx1
       valsMx2 = concat $ toListMatrix mx2
    in all (\(v1, v2) -> doubleEq v1 v2) $ zip valsMx1 valsMx2
+
+vectorEq :: Vector R -> Vector R -> Bool
+vectorEq vec1 vec2 =
+  all (\(v1, v2) -> doubleEq v1 v2) $
+  zip (toListVector vec1) (toListVector vec2)
+
+isDescending :: [R] -> Bool
+isDescending [] = True
+isDescending [x] = True
+isDescending (x1:x2:xs) = x1 < x2 && isDescending (x2 : xs)

@@ -7,6 +7,7 @@ module Regression.Linear
   , toVector
   , featureNormalize
   , toListMatrix
+  , toListVector
   ) where
 
 import Numeric.LinearAlgebra (( #> ), (<.>), (?), add)
@@ -22,6 +23,7 @@ import Numeric.LinearAlgebra.Data
   , matrix
   , scalar
   , size
+  , toList
   , toLists
   , tr'
   )
@@ -92,6 +94,9 @@ toListMatrix = toLists
 
 toVector :: ListVector -> Vector R
 toVector = fromList
+
+toListVector :: Vector R -> ListVector
+toListVector = toList
 
 addOnesColumn :: ListMatrix -> ListMatrix
 addOnesColumn = fmap (1.0 :)
