@@ -1,14 +1,12 @@
 module Main where
 
-import Numeric.LinearAlgebra.Data (matrix, vector, (?))
+import Numeric.LinearAlgebra.Data (matrix, vector, (?), fromLists)
 
-import Regression.Linear (computeCostFunction, gradientDescent)
+import Regression.Linear (computeCostFunction, gradientDescent, featureNormalize)
 
 main :: IO ()
 main = do
-  let examples = matrix 5 [ 1, 1, 2, 3, 4
-                          , 1, 5, 6, 7, 8
-                          , 1, 9, 10, 11, 12]
-      r = computeCostFunction examples (vector [20, 21, 22]) (vector [0, 0, 0, 0, 0])
-      solutions = gradientDescent examples (vector [20, 21, 22]) (vector [0, 0, 0, 0, 0]) 0.01 2000
-  print solutions
+  let examples = fromLists [ [100, 10000, 2 , 0.5,  455]
+                           , [50 , 50000, 6 , 0.7,  800]
+                           , [400, 90000, 10, 0.11, 812] ]
+  print $ featureNormalize examples

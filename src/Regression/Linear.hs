@@ -5,6 +5,7 @@ module Regression.Linear
   , splitMatrixOfSamples
   , toMatrix
   , toVector
+  , featureNormalize
   ) where
 
 import Numeric.LinearAlgebra (( #> ), (<.>), (?), add)
@@ -25,6 +26,7 @@ import Numeric.LinearAlgebra.Data
   )
 
 type ListMatrix = [[R]]
+
 type ListVector = [R]
 
 computeCostFunction :: Matrix R -> Vector R -> Vector R -> R
@@ -55,6 +57,28 @@ gradientDescent x y theta alpha depth = go 0 theta
             delta' =
               add delta ((scalar $ (th <.> xVals) - (y `atIndex` i)) * xVals)
          in computeDelta m th (i + 1) delta'
+
+featureNormalize :: Matrix R -> Matrix R
+featureNormalize mx =
+  let trMx = toLists $ tr' mx
+      normalizedTrMx =
+        zipWith
+          (\vals (mean, std) -> normalize mean std <$> vals)
+          trMx
+          (computeMeanAndStd <$> trMx)
+   in tr' $ fromLists normalizedTrMx
+  where
+    computeMean vals =
+      let (sum, n) = foldl (\(v', n) v -> (v + v', n + 1)) (0, 0) vals
+       in (sum / n, n)
+    computeStd n mn vals =
+      let sumOfSquares = foldl (\v' v -> ((v - mn) ^ 2) + v') 0 vals
+       in sqrt $ sumOfSquares / (n - 1)
+    computeMeanAndStd vals =
+      let (mean, n) = computeMean vals
+          std = computeStd n mean vals
+       in (mean, std)
+    normalize mean std val = (val - mean) / std
 
 toMatrix :: ListMatrix -> Matrix R
 toMatrix = fromLists
