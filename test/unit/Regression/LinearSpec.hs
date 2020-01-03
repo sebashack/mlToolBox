@@ -4,10 +4,14 @@ import qualified Data.ByteString.Lazy as LB (readFile)
 import Data.Csv (HasHeader(NoHeader), decode)
 import Data.Either (fromRight)
 import qualified Data.Vector as V (empty, toList)
+import Hedgehog (Gen, Property, assert, forAll, property)
+import qualified Hedgehog.Gen as Gen
+import qualified Hedgehog.Range as Range
 import System.Directory (getCurrentDirectory)
 import System.FilePath.Posix ((</>))
 import Test.Tasty (TestTree)
 import Test.Tasty (testGroup)
+import Test.Tasty.Hedgehog (testProperty)
 import Test.Tasty.Hspec (Spec, describe, it, shouldSatisfy, testSpecs)
 
 import ToolBox
@@ -17,6 +21,7 @@ import ToolBox
   , addOnesColumn
   , computeCostFunction
   , featureNormalize
+  , getDimensions
   , gradientDescent
   , splitMatrixOfSamples
   , toListMatrix
@@ -39,8 +44,17 @@ tests = do
       , featureNormalizeSpec linearRegressionMatrix normalizedLrMatrix
       , gradientDescentSpec linearRegressionMatrix linearRegressionValues
       ]
+  let properties =
+        uncurry testProperty <$>
+        [ ( "The cost fuction must decrease the more iterations gradient descent takes"
+          , costFunctionDecreasesTheMoreIterationsOfGradientDescent)
+        ]
   return $
-    testGroup "LinearRegression" [testGroup "Linear Regression specs" specs]
+    testGroup
+      "LinearRegression"
+      [ testGroup "Linear Regression specs" specs
+      , testGroup "Linear Regression properties" properties
+      ]
 
 -- Specs
 costFunctionSpec :: Matrix R -> Vector R -> Spec
@@ -110,16 +124,31 @@ gradientDescentSpec features values = do
         expectedTheta = toVector [215244.48211, 61233.08697, 20186.40938]
     theta `shouldSatisfy` (vectorEq expectedTheta)
   it "decreases the value of the cost function the more iterations are computed" $ do
-    let computeTheta =
-          gradientDescent
-            (featureNormalize features)
-            values
-            (toVector [0, 0, 0])
-            0.01
+    let normalizedFeatures = featureNormalize features
+        computeTheta =
+          gradientDescent normalizedFeatures values (toVector [0, 0, 0]) 0.01
         costFValues =
-          computeCostFunction features values . computeTheta <$>
+          computeCostFunction normalizedFeatures values . computeTheta <$>
           (take 100 $ iterate (+ 10) 1)
     costFValues `shouldSatisfy` isDescending
+
+-- Properties
+costFunctionDecreasesTheMoreIterationsOfGradientDescent :: Property
+costFunctionDecreasesTheMoreIterationsOfGradientDescent =
+  property $ do
+    (matrix, values) <- forAll genMatrixAndVals
+    alpha <- forAll genAlpha
+    let normalizedMatrix = featureNormalize matrix
+        computeTheta =
+          gradientDescent
+            normalizedMatrix
+            values
+            (toVector $ replicate (snd $ getDimensions matrix) 0)
+            alpha
+        costFValues =
+          computeCostFunction normalizedMatrix values . computeTheta <$>
+          (take 20 $ iterate (+ 5) 1)
+    assert $ isDescending costFValues
 
 -- Helpers
 readLinearRegressionSample :: FilePath -> IO (Matrix R, Matrix R, Vector R)
@@ -154,4 +183,33 @@ vectorEq vec1 vec2 =
 isDescending :: [R] -> Bool
 isDescending [] = True
 isDescending [x] = True
-isDescending (x1:x2:xs) = x1 < x2 && isDescending (x2 : xs)
+isDescending (x1:x2:xs) = x1 >= x2 && isDescending (x2 : xs)
+
+genAlpha :: Gen R
+genAlpha = Gen.double (Range.constant 0.001 0.1)
+
+genMatrixAndVals :: Gen (Matrix R, Vector R)
+genMatrixAndVals = do
+  numRows <- Gen.int (Range.linear 2 100)
+  numColumns <- Gen.int (Range.linear 2 100)
+  resultVectorVals <- genValues numRows 0 (pure [])
+  matrixVals <- genMatrix numRows numColumns 0 (pure [])
+  return $ (toMatrix . addOnesColumn $ matrixVals, toVector resultVectorVals)
+  where
+    genValues :: Int -> Int -> Gen [R] -> Gen [R]
+    genValues n i accum =
+      if i >= n
+        then accum
+        else do
+          newVal <- Gen.double (Range.linearFrac 1.0 100000.0)
+          accum' <- accum
+          genValues n (i + 1) (pure $ newVal : accum')
+    --
+    genMatrix :: Int -> Int -> Int -> Gen [[R]] -> Gen [[R]]
+    genMatrix rows cols i accum =
+      if i >= rows
+        then accum
+        else do
+          newRow <- genValues cols 0 (pure [])
+          accum' <- accum
+          genMatrix rows cols (i + 1) (pure $ newRow : accum')

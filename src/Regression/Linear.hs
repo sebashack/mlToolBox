@@ -8,6 +8,7 @@ module Regression.Linear
   , featureNormalize
   , toListMatrix
   , toListVector
+  , getDimensions
   ) where
 
 import Numeric.LinearAlgebra (( #> ), (<.>), (?), add)
@@ -26,6 +27,7 @@ import Numeric.LinearAlgebra.Data
   , toList
   , toLists
   , tr'
+  , rows
   )
 
 type ListMatrix = [[R]]
@@ -100,6 +102,9 @@ toListVector = toList
 
 addOnesColumn :: ListMatrix -> ListMatrix
 addOnesColumn = fmap (1.0 :)
+
+getDimensions :: Matrix R -> (Int, Int)
+getDimensions mx = (rows mx, cols mx)
 
 splitMatrixOfSamples :: ListMatrix -> (ListMatrix, ListVector)
 splitMatrixOfSamples mx = foldr accumFeaturesAndVals ([], []) mx
