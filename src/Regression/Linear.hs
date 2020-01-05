@@ -1,5 +1,5 @@
 module Regression.Linear
-  ( computeCostFunction
+  ( computeCost
   , gradientDescent
   , addOnesColumn
   , splitMatrixOfSamples
@@ -34,8 +34,8 @@ type ListMatrix = [[R]]
 
 type ListVector = [R]
 
-computeCostFunction :: Matrix R -> Vector R -> Vector R -> R
-computeCostFunction x y theta =
+computeCost :: Matrix R -> Vector R -> Vector R -> R
+computeCost x y theta =
   let m = fromIntegral $ size y
       a = add (x #> theta) (-1 * y)
    in (a <.> a) / (2 * m)

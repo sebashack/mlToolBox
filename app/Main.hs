@@ -2,7 +2,7 @@ module Main where
 
 import Numeric.LinearAlgebra.Data (matrix, vector, (?), fromLists)
 
-import Regression.Linear (computeCostFunction, gradientDescent, featureNormalize)
+import Regression.Linear (computeCost, gradientDescent, featureNormalize)
 
 main :: IO ()
 main = do

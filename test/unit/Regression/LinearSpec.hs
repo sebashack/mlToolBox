@@ -19,7 +19,7 @@ import ToolBox
   , R
   , Vector
   , addOnesColumn
-  , computeCostFunction
+  , computeCost
   , featureNormalize
   , getDimensions
   , gradientDescent
@@ -59,22 +59,22 @@ tests = do
 -- Specs
 costFunctionSpec :: Matrix R -> Vector R -> Spec
 costFunctionSpec features values =
-  describe "computeCostFunction" $ do
+  describe "computeCost" $ do
     it "should compute correctly for theta vector [0, 0, 0]" $ do
-      let r = computeCostFunction features values (toVector [0, 0, 0])
+      let r = computeCost features values (toVector [0, 0, 0])
           expectedValue = 65591548106.45744
       r `shouldSatisfy` doubleEq expectedValue
     it "should compute correctly for theta vector [25, 26, 27]" $ do
-      let r = computeCostFunction features values (toVector [25, 26, 27])
+      let r = computeCost features values (toVector [25, 26, 27])
           expectedValue = 47251185844.64893
       r `shouldSatisfy` doubleEq expectedValue
     it "should compute correctly for theta vector [1500, 227, 230]" $ do
-      let r = computeCostFunction features values (toVector [1500, 227, 230])
+      let r = computeCost features values (toVector [1500, 227, 230])
           expectedValue = 11433546085.01064
       r `shouldSatisfy` doubleEq expectedValue
     it "should compute correctly for theta vector [-15.03, -27.123, -59.675]" $ do
       let r =
-            computeCostFunction
+            computeCost
               features
               values
               (toVector [-15.03, -27.123, -59.675])
@@ -128,7 +128,7 @@ gradientDescentSpec features values = do
         computeTheta =
           gradientDescent normalizedFeatures values (toVector [0, 0, 0]) 0.01
         costFValues =
-          computeCostFunction normalizedFeatures values . computeTheta <$>
+          computeCost normalizedFeatures values . computeTheta <$>
           (take 100 $ iterate (+ 10) 1)
     costFValues `shouldSatisfy` isDescending
 
@@ -146,7 +146,7 @@ costFunctionDecreasesTheMoreIterationsOfGradientDescent =
             (toVector $ replicate (snd $ getDimensions matrix) 0)
             alpha
         costFValues =
-          computeCostFunction normalizedMatrix values . computeTheta <$>
+          computeCost normalizedMatrix values . computeTheta <$>
           (take 20 $ iterate (+ 5) 1)
     assert $ isDescending costFValues
 
