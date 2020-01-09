@@ -13,6 +13,7 @@ import Numeric.LinearAlgebra.Data
   , scalar
   , size
   )
+import Numeric.LinearAlgebra.Devel (foldVector)
 
 sigmoid :: R -> R
 sigmoid z = 1 / (1 + (e ** (-z)))
@@ -34,8 +35,9 @@ computeCost x y theta = go 0 0
       where
         m = size y
 
-gradientDescent :: Matrix R -> Vector R -> Vector R -> R -> Int -> Vector R
-gradientDescent x y theta alpha depth = undefined
+gradientDescent ::
+     Matrix R -> Vector R -> Vector R -> R -> Int -> Maybe R -> Vector R
+gradientDescent x y theta alpha depth maybeRegParam = go 0 theta
   where
     go k th
       | k >= depth = th
@@ -53,6 +55,22 @@ gradientDescent x y theta alpha depth = undefined
             v =
               (alpha' / fromIntegral m) *
               ((scalar (s - (y `atIndex` i))) * xVals)
-         in computeGd i (accum - v)
+            accum' =
+              if i == 0
+                then accum
+                else accum * regFactor
+         in computeGd i (accum' - v)
       where
         m = size y
+        --
+        regFactor =
+          maybe
+            (scalar (1 :: R))
+            (\lambda -> scalar $ 1 - ((alpha * lambda) / fromIntegral m))
+            maybeRegParam
+
+regularizeCost :: Int -> Vector R -> R -> R -> R
+regularizeCost m theta lambda cost =
+  let m' = fromIntegral m
+      regVal = (foldVector (\v accum -> (v ** 2) + accum) 0 theta)
+   in cost + ((regVal * lambda) / (3 * m'))
