@@ -22,12 +22,12 @@ import Numeric.LinearAlgebra.Data
   , fromList
   , fromLists
   , matrix
+  , rows
   , scalar
   , size
   , toList
   , toLists
   , tr'
-  , rows
   )
 
 type ListMatrix = [[R]]
@@ -40,28 +40,37 @@ computeCost x y theta =
       a = add (x #> theta) (-1 * y)
    in (a <.> a) / (2 * m)
 
-gradientDescent :: Matrix R -> Vector R -> Vector R -> R -> Int -> Vector R
-gradientDescent x y theta alpha depth = go 0 theta
+gradientDescent ::
+     Matrix R -> Vector R -> Vector R -> R -> Int -> Maybe R -> Vector R
+gradientDescent x y theta alpha depth maybeRegParam = go 0 theta
   where
-    go k th
-      | k >= depth = th
-      | otherwise =
-        let delta =
-              computeDelta
-                (fromIntegral $ size y)
-                th
-                0
-                (fromList $ replicate (cols x) 0)
-            th' = th - ((scalar alpha) * delta)
-         in go (k + 1) th'
+    m :: Int
+    m = size y
     --
-    computeDelta m th i delta
+    go k accum
+      | k >= depth = accum
+      | otherwise =
+        let delta = computeDelta accum 0 (fromList $ replicate (cols x) 0)
+            accum' =
+              if k == 0
+                then accum
+                else accum * regFactor
+         in go (k + 1) (accum' - ((scalar alpha) * delta))
+    --
+    computeDelta :: Vector R -> Int -> Vector R -> Vector R
+    computeDelta th i delta
       | i >= m = delta / (scalar $ fromIntegral m)
       | otherwise =
         let xVals = flatten $ x ? [i]
             delta' =
               add delta ((scalar $ (th <.> xVals) - (y `atIndex` i)) * xVals)
-         in computeDelta m th (i + 1) delta'
+         in computeDelta th (i + 1) delta'
+    --
+    regFactor =
+      maybe
+        (scalar (1 :: R))
+        (\lambda -> scalar $ 1 - ((alpha * lambda) / fromIntegral m))
+        maybeRegParam
 
 featureNormalize :: Matrix R -> Matrix R
 featureNormalize mx =

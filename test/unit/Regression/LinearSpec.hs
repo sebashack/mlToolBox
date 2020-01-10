@@ -73,11 +73,7 @@ costFunctionSpec features values =
           expectedValue = 11433546085.01064
       r `shouldSatisfy` doubleEq expectedValue
     it "should compute correctly for theta vector [-15.03, -27.123, -59.675]" $ do
-      let r =
-            computeCost
-              features
-              values
-              (toVector [-15.03, -27.123, -59.675])
+      let r = computeCost features values (toVector [-15.03, -27.123, -59.675])
           expectedValue = 88102482793.02190
       r `shouldSatisfy` doubleEq expectedValue
 
@@ -99,6 +95,7 @@ gradientDescentSpec features values = do
             (toVector [0, 0, 0])
             0.1
             50
+            Nothing
         expectedTheta = toVector [338658.24925, 104127.51560, -172.20533]
     theta `shouldSatisfy` (vectorEq expectedTheta)
   it
@@ -110,6 +107,7 @@ gradientDescentSpec features values = do
             (toVector [0, 0, 0])
             0.01
             500
+            Nothing
         expectedTheta = toVector [338175.98397, 103831.11737, 103.03073]
     theta `shouldSatisfy` (vectorEq expectedTheta)
   it
@@ -121,12 +119,19 @@ gradientDescentSpec features values = do
             (toVector [0, 0, 0])
             0.001
             1000
+            Nothing
         expectedTheta = toVector [215244.48211, 61233.08697, 20186.40938]
     theta `shouldSatisfy` (vectorEq expectedTheta)
   it "decreases the value of the cost function the more iterations are computed" $ do
     let normalizedFeatures = featureNormalize features
-        computeTheta =
-          gradientDescent normalizedFeatures values (toVector [0, 0, 0]) 0.01
+        computeTheta numIters =
+          gradientDescent
+            normalizedFeatures
+            values
+            (toVector [0, 0, 0])
+            0.01
+            numIters
+            Nothing
         costFValues =
           computeCost normalizedFeatures values . computeTheta <$>
           (take 100 $ iterate (+ 10) 1)
@@ -139,12 +144,14 @@ costFunctionDecreasesTheMoreIterationsOfGradientDescent =
     (matrix, values) <- forAll genMatrixAndVals
     alpha <- forAll genAlpha
     let normalizedMatrix = featureNormalize matrix
-        computeTheta =
+        computeTheta numIters =
           gradientDescent
             normalizedMatrix
             values
             (toVector $ replicate (snd $ getDimensions matrix) 0)
             alpha
+            numIters
+            Nothing
         costFValues =
           computeCost normalizedMatrix values . computeTheta <$>
           (take 20 $ iterate (+ 5) 1)
