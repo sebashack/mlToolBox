@@ -8,6 +8,7 @@ module Regression.Common
   , getDimensions
   , featureNormalize
   , sigmoid
+  , regularizeCost
   ) where
 
 import Numeric.LinearAlgebra.Data
@@ -78,10 +79,11 @@ featureNormalize mx =
    in tr' $ fromLists normalizedTrMx
   where
     computeMean vals =
-      let (sum, n) = foldl (\(v', n) v -> (v + v', n + 1)) (0, 0) vals
-       in (sum / n, n)
+      let (accum, n) = foldl (\(v', n') v -> (v + v', n' + 1)) (0, 0) vals
+       in (accum / n, n)
     computeStd n mn vals =
-      let sumOfSquares = foldl (\v' v -> ((v - mn) ^ 2) + v') 0 vals
+      let sumOfSquares =
+            foldl (\v' v -> ((v - mn) ** (2 :: Double)) + v') (0 :: Double) vals
        in sqrt $ sumOfSquares / (n - 1)
     computeMeanAndStd vals =
       let (mean, n) = computeMean vals

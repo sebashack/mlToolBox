@@ -1,12 +1,6 @@
 module Regression.LinearSpec where
 
-import qualified Data.ByteString.Lazy as LB (readFile)
-import Data.Csv (HasHeader(NoHeader), decode)
-import Data.Either (fromRight)
-import qualified Data.Vector as V (empty, toList)
-import Hedgehog (Gen, Property, assert, forAll, property)
-import qualified Hedgehog.Gen as Gen
-import qualified Hedgehog.Range as Range
+import Hedgehog (Property, assert, forAll, property)
 import System.Directory (getCurrentDirectory)
 import System.FilePath.Posix ((</>))
 import Test.Tasty (TestTree)
@@ -18,30 +12,32 @@ import ToolBox
   ( Matrix
   , R
   , Vector
-  , addOnesColumn
   , computeCost
   , featureNormalize
   , getDimensions
   , gradientDescent
-  , splitMatrixOfSamples
-  , toListMatrix
-  , toListVector
-  , toMatrix
   , toVector
+  )
+import Utils
+  ( doubleEq
+  , genAlpha
+  , genMatrixAndVals
+  , isDescending
+  , readLinearRegressionSample
+  , vectorEq
   )
 
 tests :: IO TestTree
 tests = do
   curDir <- getCurrentDirectory
   let dataDir = curDir </> "testData"
-  (linearRegressionMatrix, normalizedLrMatrix, linearRegressionValues) <-
+  (linearRegressionMatrix, _, linearRegressionValues) <-
     readLinearRegressionSample dataDir
   specs <-
     concat <$>
     mapM
       testSpecs
       [ costFunctionSpec linearRegressionMatrix linearRegressionValues
-      , featureNormalizeSpec linearRegressionMatrix normalizedLrMatrix
       , gradientDescentSpec linearRegressionMatrix linearRegressionValues
       ]
   let properties =
@@ -76,13 +72,6 @@ costFunctionSpec features values =
       let r = computeCost features values (toVector [-15.03, -27.123, -59.675])
           expectedValue = 88102482793.02190
       r `shouldSatisfy` doubleEq expectedValue
-
-featureNormalizeSpec :: Matrix R -> Matrix R -> Spec
-featureNormalizeSpec features expectedMatrix =
-  describe "featureNormalize" $ do
-    it "correctly normalizes the matrix values" $ do
-      let normalizedMatrix = featureNormalize features
-      normalizedMatrix `shouldSatisfy` (matrixEq expectedMatrix)
 
 gradientDescentSpec :: Matrix R -> Vector R -> Spec
 gradientDescentSpec features values = do
@@ -156,67 +145,3 @@ costFunctionDecreasesTheMoreIterationsOfGradientDescent =
           computeCost normalizedMatrix values . computeTheta <$>
           (take 20 $ iterate (+ 5) 1)
     assert $ isDescending costFValues
-
--- Helpers
-readLinearRegressionSample :: FilePath -> IO (Matrix R, Matrix R, Vector R)
-readLinearRegressionSample dataDir = do
-  let linearRegressionFile = dataDir </> "linearRegression.csv"
-  linearRegressionData <- decode NoHeader <$> LB.readFile linearRegressionFile
-  let (features, vals) =
-        splitMatrixOfSamples . V.toList . fromRight V.empty $
-        linearRegressionData
-  let normalizedDataFile = dataDir </> "lrFeatureNormalize.csv"
-  normalizedLrData <- decode NoHeader <$> LB.readFile normalizedDataFile
-  let normalizedFeatures =
-        toMatrix . addOnesColumn . V.toList . fromRight V.empty $
-        normalizedLrData
-  return
-    (toMatrix . addOnesColumn $ features, normalizedFeatures, toVector vals)
-
-doubleEq :: Double -> Double -> Bool
-doubleEq r1 r2 = abs (r1 - r2) <= 0.0001
-
-matrixEq :: Matrix R -> Matrix R -> Bool
-matrixEq mx1 mx2 =
-  let valsMx1 = concat $ toListMatrix mx1
-      valsMx2 = concat $ toListMatrix mx2
-   in all (\(v1, v2) -> doubleEq v1 v2) $ zip valsMx1 valsMx2
-
-vectorEq :: Vector R -> Vector R -> Bool
-vectorEq vec1 vec2 =
-  all (\(v1, v2) -> doubleEq v1 v2) $
-  zip (toListVector vec1) (toListVector vec2)
-
-isDescending :: [R] -> Bool
-isDescending [] = True
-isDescending [x] = True
-isDescending (x1:x2:xs) = x1 >= x2 && isDescending (x2 : xs)
-
-genAlpha :: Gen R
-genAlpha = Gen.double (Range.constant 0.001 0.1)
-
-genMatrixAndVals :: Gen (Matrix R, Vector R)
-genMatrixAndVals = do
-  numRows <- Gen.int (Range.linear 2 100)
-  numColumns <- Gen.int (Range.linear 2 100)
-  resultVectorVals <- genValues numRows 0 (pure [])
-  matrixVals <- genMatrix numRows numColumns 0 (pure [])
-  return $ (toMatrix . addOnesColumn $ matrixVals, toVector resultVectorVals)
-  where
-    genValues :: Int -> Int -> Gen [R] -> Gen [R]
-    genValues n i accum =
-      if i >= n
-        then accum
-        else do
-          newVal <- Gen.double (Range.linearFrac 1.0 100000.0)
-          accum' <- accum
-          genValues n (i + 1) (pure $ newVal : accum')
-    --
-    genMatrix :: Int -> Int -> Int -> Gen [[R]] -> Gen [[R]]
-    genMatrix rows cols i accum =
-      if i >= rows
-        then accum
-        else do
-          newRow <- genValues cols 0 (pure [])
-          accum' <- accum
-          genMatrix rows cols (i + 1) (pure $ newRow : accum')

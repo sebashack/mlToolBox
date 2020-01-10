@@ -12,14 +12,8 @@ import Numeric.LinearAlgebra.Data
   , cols
   , flatten
   , fromList
-  , fromLists
-  , matrix
-  , rows
   , scalar
   , size
-  , toList
-  , toLists
-  , tr'
   )
 
 computeCost :: Matrix R -> Vector R -> Vector R -> R
