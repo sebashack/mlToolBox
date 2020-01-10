@@ -1,4 +1,7 @@
-module Regression.Logistic where
+module Regression.Logistic
+  ( computeCost
+  , gradientDescent
+  ) where
 
 import Numeric.LinearAlgebra ((<.>))
 import Numeric.LinearAlgebra.Data
@@ -13,12 +16,7 @@ import Numeric.LinearAlgebra.Data
   , scalar
   , size
   )
-import Numeric.LinearAlgebra.Devel (foldVector)
-
-sigmoid :: R -> R
-sigmoid z = 1 / (1 + (e ** (-z)))
-  where
-    e = exp 1
+import Regression.Common (sigmoid)
 
 computeCost :: Matrix R -> Vector R -> Vector R -> R
 computeCost x y theta = go 0 0
@@ -68,9 +66,3 @@ gradientDescent x y theta alpha depth maybeRegParam = go 0 theta
             (scalar (1 :: R))
             (\lambda -> scalar $ 1 - ((alpha * lambda) / fromIntegral m))
             maybeRegParam
-
-regularizeCost :: Int -> Vector R -> R -> R -> R
-regularizeCost m theta lambda cost =
-  let m' = fromIntegral m
-      regVal = (foldVector (\v accum -> (v ** 2) + accum) 0 theta)
-   in cost + ((regVal * lambda) / (3 * m'))
