@@ -26,18 +26,21 @@ gradientDescent ::
      Matrix R -> Vector R -> Vector R -> R -> Int -> Maybe R -> Vector R
 gradientDescent x y theta alpha depth maybeRegParam = go 0 theta
   where
-    m :: Int
     m = size y
+    --
+    alpha' = scalar alpha
+    --
+    zeroesDelta = fromList $ replicate (cols x) 0
     --
     go k accum
       | k >= depth = accum
       | otherwise =
-        let delta = computeDelta accum 0 (fromList $ replicate (cols x) 0)
+        let delta = computeDelta accum 0 zeroesDelta
             accum' =
               if k == 0
                 then accum
                 else accum * regFactor
-         in go (k + 1) (accum' - ((scalar alpha) * delta))
+         in go (k + 1) (accum' - (alpha' * delta))
     --
     computeDelta :: Vector R -> Int -> Vector R -> Vector R
     computeDelta th i delta
