@@ -6,23 +6,50 @@ import Test.Tasty (TestTree)
 import Test.Tasty (testGroup)
 import Test.Tasty.Hspec (Spec, describe, it, shouldSatisfy, testSpecs)
 
-import Utils (readLogisticRegressionSample)
+import Reexports (Matrix, R, Vector)
+import Regression.Common (toVector)
+import Regression.Logistic (computeCost, gradientDescent)
+import Utils (doubleEq, readLogisticRegressionSample, vectorEq)
 
 tests :: IO TestTree
 tests = do
   curDir <- getCurrentDirectory
   let dataDir = curDir </> "testData"
-  (logisticRegressionMatrix, linearRegressionValues) <-
+  (logisticRegressionMatrix, logisticRegressionValues) <-
     readLogisticRegressionSample dataDir
-  specs <- concat <$> mapM testSpecs []
+  specs <-
+    concat <$>
+    mapM
+      testSpecs
+      [ costFunctionSpec logisticRegressionMatrix logisticRegressionValues
+      , gradientDescentSpec logisticRegressionMatrix logisticRegressionValues ]
   return $
     testGroup "LogisticRegression" [testGroup "Logistic Regression specs" specs]
 
 -- Specs
---costFunctionSpec :: Matrix R -> Vector R -> Spec
---costFunctionSpec features values =
---  describe "computeCost" $ do
---    it "should compute correctly for theta vector [0, 0, 0]" $ do
---      let r = computeCost features values (toVector [0, 0, 0])
---          expectedValue = 65591548106.45744
---      r `shouldSatisfy` doubleEq expectedValue
+costFunctionSpec :: Matrix R -> Vector R -> Spec
+costFunctionSpec features values =
+  describe "computeCost" $ do
+    it "should compute correctly for theta vector [0, 0, 0]" $ do
+      let r = computeCost features values (toVector [0, 0, 0])
+          expectedValue = 0.693147
+      r `shouldSatisfy` doubleEq expectedValue
+    it "should compute correctly for theta vector [-24, 0.2, 0.2]" $ do
+      let r = computeCost features values (toVector [-24, 0.2, 0.2])
+          expectedValue = 0.21833
+      r `shouldSatisfy` doubleEq expectedValue
+
+gradientDescentSpec :: Matrix R -> Vector R -> Spec
+gradientDescentSpec features values = do
+  it
+    "should compute correctly for theta starting at [0, 0, 0], alpha = 0.01 and 100 iterations" $ do
+    let theta =
+          gradientDescent
+            features
+            values
+            (toVector [0, 0, 0])
+            0.01
+            100
+            Nothing
+        expectedTheta = toVector [-25.161272, 0.206233, 0.201470]
+    theta `shouldSatisfy` (vectorEq expectedTheta)

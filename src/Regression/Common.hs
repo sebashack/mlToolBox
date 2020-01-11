@@ -8,6 +8,7 @@ module Regression.Common
   , getDimensions
   , featureNormalize
   , sigmoid
+  , sigmoidVec
   , regularizeCost
   ) where
 
@@ -15,6 +16,7 @@ import Numeric.LinearAlgebra.Data
   ( Matrix
   , R
   , Vector
+  , cmap
   , cols
   , fromList
   , fromLists
@@ -58,9 +60,10 @@ getDimensions :: Matrix R -> (Int, Int)
 getDimensions mx = (rows mx, cols mx)
 
 sigmoid :: R -> R
-sigmoid z = 1 / (1 + (e ** (-z)))
-  where
-    e = exp 1
+sigmoid z = 1 / (1 + exp (-1 * z))
+
+sigmoidVec :: Vector R -> Vector R
+sigmoidVec = cmap sigmoid
 
 regularizeCost :: Int -> Vector R -> R -> R -> R
 regularizeCost m theta lambda cost =

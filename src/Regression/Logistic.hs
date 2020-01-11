@@ -3,7 +3,7 @@ module Regression.Logistic
   , gradientDescent
   ) where
 
-import Numeric.LinearAlgebra ((<.>))
+import Numeric.LinearAlgebra (( #> ), (<.>), add)
 import Numeric.LinearAlgebra.Data
   ( Matrix
   , R
@@ -15,8 +15,9 @@ import Numeric.LinearAlgebra.Data
   , fromList
   , scalar
   , size
+  , tr'
   )
-import Regression.Common (sigmoid)
+import Regression.Common (sigmoid, sigmoidVec)
 
 computeCost :: Matrix R -> Vector R -> Vector R -> R
 computeCost x y theta = go 0 0
@@ -29,40 +30,35 @@ computeCost x y theta = go 0 0
             yi = y `atIndex` i
             a = (-1 * yi) * (log s)
             b = (1 - yi) * (log $ 1 - s)
-         in go i (accum + a - b)
+         in go (i + 1) (accum + a - b)
       where
         m = size y
 
 gradientDescent ::
      Matrix R -> Vector R -> Vector R -> R -> Int -> Maybe R -> Vector R
 gradientDescent x y theta alpha depth maybeRegParam = go 0 theta
+    --
   where
-    go k th
-      | k >= depth = th
-      | otherwise =
-        let gd = computeGd 0 (fromList $ replicate (cols x) 0)
-         in go (k + 1) (th - gd)
+    alphaDivM = scalar $ (alpha / fromIntegral m)
     --
-    alpha' = scalar alpha
+    m = size y
     --
-    computeGd i accum
-      | i >= m = accum
+    go k accum
+      | k >= depth = accum
       | otherwise =
-        let xVals = flatten $ x ? [i]
-            s = sigmoid (theta <.> xVals)
-            v =
-              (alpha' / fromIntegral m) *
-              ((scalar (s - (y `atIndex` i))) * xVals)
+        let delta = computeDelta accum
             accum' =
-              if i == 0
+              if k == 0
                 then accum
                 else accum * regFactor
-         in computeGd i (accum' - v)
-      where
-        m = size y
-        --
-        regFactor =
-          maybe
-            (scalar (1 :: R))
-            (\lambda -> scalar $ 1 - ((alpha * lambda) / fromIntegral m))
-            maybeRegParam
+         in go (k + 1) (accum' - (alphaDivM * delta))
+    --
+    xTr = tr' x
+    --
+    computeDelta th = xTr #> ((sigmoidVec (x #> th)) - y)
+    --
+    regFactor =
+      maybe
+        (scalar (1 :: R))
+        (\lambda -> scalar $ 1 - ((alpha * lambda) / fromIntegral m))
+        maybeRegParam

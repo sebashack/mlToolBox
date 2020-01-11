@@ -3,7 +3,7 @@ module Regression.Linear
   , gradientDescent
   ) where
 
-import Numeric.LinearAlgebra (( #> ), (<.>), (?), add)
+import Numeric.LinearAlgebra (( #> ), (<.>), (?))
 import Numeric.LinearAlgebra.Data
   ( Matrix
   , R
@@ -19,7 +19,7 @@ import Numeric.LinearAlgebra.Data
 computeCost :: Matrix R -> Vector R -> Vector R -> R
 computeCost x y theta =
   let m = fromIntegral $ size y
-      a = add (x #> theta) (-1 * y)
+      a = (x #> theta) + (-1 * y)
    in (a <.> a) / (2 * m)
 
 gradientDescent ::
@@ -30,12 +30,12 @@ gradientDescent x y theta alpha depth maybeRegParam = go 0 theta
     --
     alpha' = scalar alpha
     --
-    zeroesDelta = fromList $ replicate (cols x) 0
+    zerosDelta = fromList $ replicate (cols x) 0
     --
     go k accum
       | k >= depth = accum
       | otherwise =
-        let delta = computeDelta accum 0 zeroesDelta
+        let delta = computeDelta accum 0 zerosDelta
             accum' =
               if k == 0
                 then accum
@@ -48,7 +48,7 @@ gradientDescent x y theta alpha depth maybeRegParam = go 0 theta
       | otherwise =
         let xVals = flatten $ x ? [i]
             delta' =
-              add delta ((scalar $ (th <.> xVals) - (y `atIndex` i)) * xVals)
+              delta + ((scalar $ (th <.> xVals) - (y `atIndex` i)) * xVals)
          in computeDelta th (i + 1) delta'
     --
     regFactor =
