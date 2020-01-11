@@ -2,11 +2,11 @@ module Regression.CommonSpec where
 
 import Test.Tasty.Hspec (Spec, describe, it, shouldSatisfy, testSpecs)
 
+import Reexports (Matrix, R)
+import Regression.Common (featureNormalize)
 import System.Directory (getCurrentDirectory)
 import System.FilePath.Posix ((</>))
-import Test.Tasty (TestTree)
-import Test.Tasty (testGroup)
-import ToolBox (Matrix, R, featureNormalize)
+import Test.Tasty (TestTree, testGroup)
 import Utils (matrixEq, readLinearRegressionSample)
 
 tests :: IO TestTree

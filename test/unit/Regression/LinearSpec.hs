@@ -8,16 +8,12 @@ import Test.Tasty (testGroup)
 import Test.Tasty.Hedgehog (testProperty)
 import Test.Tasty.Hspec (Spec, describe, it, shouldSatisfy, testSpecs)
 
-import ToolBox
-  ( Matrix
-  , R
-  , Vector
-  , computeCost
-  , featureNormalize
-  , getDimensions
-  , gradientDescent
-  , toVector
-  )
+import Reexports (Matrix, R, Vector)
+
+import Regression.Linear (computeCost, gradientDescent)
+
+import Regression.Common (featureNormalize, getDimensions, toVector)
+
 import Utils
   ( doubleEq
   , genAlpha

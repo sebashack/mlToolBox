@@ -9,11 +9,10 @@ import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import System.FilePath.Posix ((</>))
 
-import ToolBox
-  ( Matrix
-  , R
-  , Vector
-  , addOnesColumn
+import Reexports (Matrix, R, Vector)
+
+import Regression.Common
+  ( addOnesColumn
   , splitMatrixOfSamples
   , toListMatrix
   , toListVector
@@ -83,3 +82,13 @@ readLinearRegressionSample dataDir = do
         normalizedLrData
   return
     (toMatrix . addOnesColumn $ features, normalizedFeatures, toVector vals)
+
+readLogisticRegressionSample :: FilePath -> IO (Matrix R, Vector R)
+readLogisticRegressionSample dataDir = do
+  let logisticRegressionFile = dataDir </> "logisticRegression.csv"
+  logisticRegressionData <-
+    decode NoHeader <$> LB.readFile logisticRegressionFile
+  let (features, vals) =
+        splitMatrixOfSamples . V.toList . fromRight V.empty $
+        logisticRegressionData
+  return (toMatrix . addOnesColumn $ features, toVector vals)
