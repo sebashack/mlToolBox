@@ -20,19 +20,10 @@ import Numeric.LinearAlgebra.Data
 import Regression.Common (sigmoid, sigmoidVec)
 
 computeCost :: Matrix R -> Vector R -> Vector R -> R
-computeCost x y theta = go 0 0
-  where
-    go i accum
-      | i >= m = accum / (fromIntegral m)
-      | otherwise =
-        let xVals = flatten $ x ? [i]
-            s = sigmoid (theta <.> xVals)
-            yi = y `atIndex` i
-            a = (-1 * yi) * (log s)
-            b = (1 - yi) * (log $ 1 - s)
-         in go (i + 1) (accum + a - b)
-      where
-        m = size y
+computeCost x y theta =
+  let s = sigmoidVec (x #> theta)
+      m = size y
+   in ((y <.> log (s)) + ((1 - y) <.> log (1 - s))) / fromIntegral (-m)
 
 gradientDescent ::
      Matrix R -> Vector R -> Vector R -> R -> Int -> Maybe R -> Vector R
