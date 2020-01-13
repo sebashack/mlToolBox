@@ -44,9 +44,7 @@ gradientDescent x y theta alpha depth maybeRegParam = go 0 theta
                 else accum * regFactor
          in go (k + 1) (accum' - (alphaDivM * delta))
     --
-    xTr = tr' x
-    --
-    computeDelta th = xTr #> ((sigmoidVec (x #> th)) - y)
+    computeDelta th = (tr' x) #> ((sigmoidVec (x #> th)) - y)
     --
     regFactor =
       maybe

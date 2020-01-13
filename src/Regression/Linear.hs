@@ -14,6 +14,7 @@ import Numeric.LinearAlgebra.Data
   , fromList
   , scalar
   , size
+  , tr'
   )
 
 computeCost :: Matrix R -> Vector R -> Vector R -> R
@@ -28,28 +29,19 @@ gradientDescent x y theta alpha depth maybeRegParam = go 0 theta
   where
     m = size y
     --
-    alpha' = scalar alpha
-    --
-    zerosDelta = fromList $ replicate (cols x) 0
+    alphaDivM = scalar $ (alpha / fromIntegral m)
     --
     go k accum
       | k >= depth = accum
       | otherwise =
-        let delta = computeDelta accum 0 zerosDelta
+        let delta = computeDelta accum
             accum' =
               if k == 0
                 then accum
                 else accum * regFactor
-         in go (k + 1) (accum' - (alpha' * delta))
+         in go (k + 1) (accum' - (alphaDivM * delta))
     --
-    computeDelta :: Vector R -> Int -> Vector R -> Vector R
-    computeDelta th i delta
-      | i >= m = delta / (scalar $ fromIntegral m)
-      | otherwise =
-        let xVals = flatten $ x ? [i]
-            delta' =
-              delta + ((scalar $ (th <.> xVals) - (y `atIndex` i)) * xVals)
-         in computeDelta th (i + 1) delta'
+    computeDelta th = (tr' x) #> ((x #> th) - y)
     --
     regFactor =
       maybe
