@@ -25,7 +25,7 @@ computeCost x y theta =
    in (a <.> a) / (2 * m)
 
 gradientDescent :: Matrix R -> Vector R -> Vector R -> R -> Int -> R -> Vector R
-gradientDescent x y theta alpha numIters regFactor
+gradientDescent _ _ _ alpha numIters regFactor
   | regFactor < 0 = error "Regularization factor cannot be < 0"
   | alpha < 0 = error "Learning factor cannot be < 0"
   | numIters < 0 = error "Number of iterations cannot be < 0"

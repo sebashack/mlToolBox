@@ -52,7 +52,7 @@ gradientDescentSpec features values = do
             (toVector [0, 0, 0])
             0.01
             165000
-            Nothing
+            0
         expectedTheta = toVector [1.718447, 4.012899, 3.743847]
     theta `shouldSatisfy` (vectorEq expectedTheta)
 
@@ -67,6 +67,6 @@ gradientBFGS2Spec features values = do
             (toVector [0, 0, 0])
             400
             (MinimizationOpts 0.01 0.1 0.01)
-            Nothing
+            0
         expectedTheta = toVector [-24.439, 0.2004, 0.1956]
     theta `shouldSatisfy` (vectorEq expectedTheta)

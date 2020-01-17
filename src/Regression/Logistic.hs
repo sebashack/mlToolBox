@@ -31,32 +31,29 @@ computeCost x y theta =
       m = size y
    in ((y <.> log (s)) + ((1 - y) <.> log (1 - s))) / fromIntegral (-m)
 
-gradientDescent ::
-     Matrix R -> Vector R -> Vector R -> R -> Int -> Maybe R -> Vector R
-gradientDescent x y theta alpha depth maybeRegParam = go 0 theta
+gradientDescent :: Matrix R -> Vector R -> Vector R -> R -> Int -> R -> Vector R
+gradientDescent _ _ _ alpha numIters regFactor
+  | regFactor < 0 = error "Regularization factor cannot be < 0"
+  | alpha < 0 = error "Learning factor cannot be < 0"
+  | numIters < 0 = error "Number of iterations cannot be < 0"
+gradientDescent x y theta alpha depth regFactor = go 0 theta
     --
   where
-    alphaDivM = scalar $ (alpha / fromIntegral m)
+    alpha' = scalar alpha
     --
-    m = size y
+    m = fromIntegral $ size y
     --
     go k accum
       | k >= depth = accum
       | otherwise =
         let delta = computeDelta accum
-            accum' =
-              if k == 0
-                then accum
-                else accum * regFactor
-         in go (k + 1) (accum' - (alphaDivM * delta))
+         in go (k + 1) (accum - (alpha' * delta))
     --
-    computeDelta th = (tr' x) #> ((sigmoidVec (x #> th)) - y)
+    penalizedTheta = fromList $ 0 : (tail $ ((* regFactor) <$> toList theta))
     --
-    regFactor =
-      maybe
-        (scalar (1 :: R))
-        (\lambda -> scalar $ 1 - ((alpha * lambda) / fromIntegral m))
-        maybeRegParam
+    computeDelta th =
+      let delta = (tr' x) #> ((sigmoidVec (x #> th)) - y)
+       in (delta + penalizedTheta) / scalar m
 
 gradientBFGS2 ::
      Matrix R
@@ -64,14 +61,17 @@ gradientBFGS2 ::
   -> Vector R
   -> Int
   -> MinimizationOpts
-  -> Maybe R
+  -> R
   -> Vector R
-gradientBFGS2 x y theta numIter MinimizationOpts {..} maybeRegParam =
+gradientBFGS2 _ _ _ numIters _ regFactor
+  | regFactor < 0 = error "Regularization factor cannot be < 0"
+  | numIters < 0 = error "Number of iterations cannot be < 0"
+gradientBFGS2 x y theta numIters MinimizationOpts {..} regFactor =
   let (params, _) =
         minimizeVD
           VectorBFGS2
           precision
-          numIter
+          numIters
           sizeOfFirstTrialStep
           tolerance
           (computeCost x y)
@@ -79,16 +79,13 @@ gradientBFGS2 x y theta numIter MinimizationOpts {..} maybeRegParam =
           theta
    in params
   where
-    m = size y
+    m = fromIntegral $ size y
     --
     xTr = tr' x
     --
+    penalizedTheta = fromList $ 0 : (tail $ ((* regFactor) <$> toList theta))
+    --
     computeGradients :: Vector R -> Vector R
     computeGradients th =
-      let newTh = xTr #> ((sigmoidVec (x #> th)) - y)
-       in case maybeRegParam of
-            Nothing -> newTh / fromIntegral m
-            Just l ->
-              let (t:ts) = toList theta
-                  penalizedTh = fromList $ 0 : ((* (l / fromIntegral m)) <$> ts)
-               in (newTh + penalizedTh) / fromIntegral m
+      let delta = (tr' x) #> ((sigmoidVec (x #> th)) - y)
+       in (delta + penalizedTheta) / scalar m
