@@ -9,10 +9,14 @@ import Test.Tasty.Hedgehog (testProperty)
 import Test.Tasty.Hspec (Spec, describe, it, shouldSatisfy, testSpecs)
 
 import Reexports (Matrix, R, Vector)
+import Regression.Linear (computeCost, gradientBFGS2, gradientDescent)
 
-import Regression.Linear (computeCost, gradientDescent)
-
-import Regression.Common (featureNormalize, getDimensions, toVector)
+import Regression.Common
+  ( MinimizationOpts(..)
+  , featureNormalize
+  , getDimensions
+  , toVector
+  )
 
 import Utils
   ( doubleEq
@@ -35,6 +39,7 @@ tests = do
       testSpecs
       [ costFunctionSpec linearRegressionMatrix linearRegressionValues
       , gradientDescentSpec linearRegressionMatrix linearRegressionValues
+      , gradientBFGS2Spec linearRegressionMatrix linearRegressionValues
       ]
   let properties =
         uncurry testProperty <$>
@@ -121,6 +126,20 @@ gradientDescentSpec features values = do
           computeCost normalizedFeatures values . computeTheta <$>
           (take 100 $ iterate (+ 10) 1)
     costFValues `shouldSatisfy` isDescending
+
+gradientBFGS2Spec :: Matrix R -> Vector R -> Spec
+gradientBFGS2Spec features values = do
+  it "should compute correctly for theta starting at [0, 0, 0], 500 iterations" $ do
+    let theta =
+          gradientBFGS2
+            (featureNormalize features)
+            values
+            (toVector [0, 0, 0])
+            500
+            (MinimizationOpts 0.01 0.1 0.01)
+            0
+        expectedTheta = toVector [340412.659, 110631.0502, -6649.474]
+    theta `shouldSatisfy` (vectorEq expectedTheta)
 
 -- Properties
 costFunctionDecreasesTheMoreIterationsOfGradientDescent :: Property

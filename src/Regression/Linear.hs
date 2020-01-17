@@ -1,8 +1,12 @@
+{-# LANGUAGE RecordWildCards #-}
+
 module Regression.Linear
   ( computeCost
   , gradientDescent
+  , gradientBFGS2
   ) where
 
+import Numeric.GSL.Minimization (MinimizeMethodD(VectorBFGS2), minimizeVD)
 import Numeric.LinearAlgebra (( #> ), (<.>), (?))
 import Numeric.LinearAlgebra.Data
   ( Matrix
@@ -17,6 +21,7 @@ import Numeric.LinearAlgebra.Data
   , toList
   , tr'
   )
+import Regression.Common (MinimizationOpts(..))
 
 computeCost :: Matrix R -> Vector R -> Vector R -> R
 computeCost x y theta =
@@ -44,5 +49,40 @@ gradientDescent x y theta alpha numIters regFactor = go 0 theta
     penalizedTheta = fromList $ 0 : (tail $ ((* regFactor) <$> toList theta))
     --
     computeDelta th =
+      let delta = (tr' x) #> ((x #> th) - y)
+       in (delta + penalizedTheta) / scalar m
+
+gradientBFGS2 ::
+     Matrix R
+  -> Vector R
+  -> Vector R
+  -> Int
+  -> MinimizationOpts
+  -> R
+  -> Vector R
+gradientBFGS2 _ _ _ numIters _ regFactor
+  | regFactor < 0 = error "Regularization factor cannot be < 0"
+  | numIters < 0 = error "Number of iterations cannot be < 0"
+gradientBFGS2 x y theta numIters MinimizationOpts {..} regFactor =
+  let (params, _) =
+        minimizeVD
+          VectorBFGS2
+          precision
+          numIters
+          sizeOfFirstTrialStep
+          tolerance
+          (computeCost x y)
+          computeGradients
+          theta
+   in params
+  where
+    m = fromIntegral $ size y
+    --
+    xTr = tr' x
+    --
+    penalizedTheta = fromList $ 0 : (tail $ ((* regFactor) <$> toList theta))
+    --
+    computeGradients :: Vector R -> Vector R
+    computeGradients th =
       let delta = (tr' x) #> ((x #> th) - y)
        in (delta + penalizedTheta) / scalar m
