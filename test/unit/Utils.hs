@@ -21,7 +21,7 @@ import Regression.Common
   )
 
 doubleEq :: Double -> Double -> Bool
-doubleEq r1 r2 = abs (r1 - r2) <= 0.0001
+doubleEq r1 r2 = abs (r1 - r2) <= 0.001
 
 matrixEq :: Matrix R -> Matrix R -> Bool
 matrixEq mx1 mx2 =

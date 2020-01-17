@@ -10,6 +10,7 @@ module Regression.Common
   , sigmoid
   , sigmoidVec
   , regularizeCost
+  , MinimizationOpts(..)
   ) where
 
 import Numeric.LinearAlgebra.Data
@@ -30,6 +31,12 @@ import Numeric.LinearAlgebra.Devel (foldVector)
 type ListMatrix = [[R]]
 
 type ListVector = [R]
+
+data MinimizationOpts = MinimizationOpts
+  { precision :: R
+  , tolerance :: R
+  , sizeOfFirstTrialStep :: R
+  } deriving (Eq)
 
 splitMatrixOfSamples :: ListMatrix -> (ListMatrix, ListVector)
 splitMatrixOfSamples mx = foldr accumFeaturesAndVals ([], []) mx
