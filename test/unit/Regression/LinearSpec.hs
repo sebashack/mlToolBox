@@ -80,7 +80,7 @@ gradientDescentSpec features values = do
             (toVector [0, 0, 0])
             0.1
             50
-            Nothing
+            0
         expectedTheta = toVector [338658.24925, 104127.51560, -172.20533]
     theta `shouldSatisfy` (vectorEq expectedTheta)
   it
@@ -92,7 +92,7 @@ gradientDescentSpec features values = do
             (toVector [0, 0, 0])
             0.01
             500
-            Nothing
+            0
         expectedTheta = toVector [338175.98397, 103831.11737, 103.03073]
     theta `shouldSatisfy` (vectorEq expectedTheta)
   it
@@ -104,7 +104,7 @@ gradientDescentSpec features values = do
             (toVector [0, 0, 0])
             0.001
             1000
-            Nothing
+            0
         expectedTheta = toVector [215244.48211, 61233.08697, 20186.40938]
     theta `shouldSatisfy` (vectorEq expectedTheta)
   it "decreases the value of the cost function the more iterations are computed" $ do
@@ -116,7 +116,7 @@ gradientDescentSpec features values = do
             (toVector [0, 0, 0])
             0.01
             numIters
-            Nothing
+            0
         costFValues =
           computeCost normalizedFeatures values . computeTheta <$>
           (take 100 $ iterate (+ 10) 1)
@@ -136,7 +136,7 @@ costFunctionDecreasesTheMoreIterationsOfGradientDescent =
             (toVector $ replicate (snd $ getDimensions matrix) 0)
             alpha
             numIters
-            Nothing
+            0
         costFValues =
           computeCost normalizedMatrix values . computeTheta <$>
           (take 20 $ iterate (+ 5) 1)

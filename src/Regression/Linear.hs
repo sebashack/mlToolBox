@@ -14,6 +14,7 @@ import Numeric.LinearAlgebra.Data
   , fromList
   , scalar
   , size
+  , toList
   , tr'
   )
 
@@ -23,28 +24,25 @@ computeCost x y theta =
       a = (x #> theta) + (-1 * y)
    in (a <.> a) / (2 * m)
 
-gradientDescent ::
-     Matrix R -> Vector R -> Vector R -> R -> Int -> Maybe R -> Vector R
-gradientDescent x y theta alpha depth maybeRegParam = go 0 theta
+gradientDescent :: Matrix R -> Vector R -> Vector R -> R -> Int -> R -> Vector R
+gradientDescent x y theta alpha numIters regFactor
+  | regFactor < 0 = error "Regularization factor cannot be < 0"
+  | alpha < 0 = error "Learning factor cannot be < 0"
+  | numIters < 0 = error "Number of iterations cannot be < 0"
+gradientDescent x y theta alpha numIters regFactor = go 0 theta
   where
-    m = size y
+    m = fromIntegral $ size y
     --
-    alphaDivM = scalar $ (alpha / fromIntegral m)
+    alpha' = scalar alpha
     --
     go k accum
-      | k >= depth = accum
+      | k >= numIters = accum
       | otherwise =
         let delta = computeDelta accum
-            accum' =
-              if k == 0
-                then accum
-                else accum * regFactor
-         in go (k + 1) (accum' - (alphaDivM * delta))
+         in go (k + 1) (accum - (alpha' * delta))
     --
-    computeDelta th = (tr' x) #> ((x #> th) - y)
+    penalizedTheta = fromList $ 0 : (tail $ ((* regFactor) <$> toList theta))
     --
-    regFactor =
-      maybe
-        (scalar (1 :: R))
-        (\lambda -> scalar $ 1 - ((alpha * lambda) / fromIntegral m))
-        maybeRegParam
+    computeDelta th =
+      let delta = (tr' x) #> ((x #> th) - y)
+       in (delta + penalizedTheta) / scalar m

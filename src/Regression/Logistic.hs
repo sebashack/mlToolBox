@@ -91,4 +91,4 @@ gradientBFGS2 x y theta numIter MinimizationOpts {..} maybeRegParam =
             Just l ->
               let (t:ts) = toList theta
                   penalizedTh = fromList $ 0 : ((* (l / fromIntegral m)) <$> ts)
-               in newTh + penalizedTh
+               in (newTh + penalizedTh) / fromIntegral m
