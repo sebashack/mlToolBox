@@ -26,7 +26,7 @@ import Common (MinimizationOpts(..))
 computeCost :: Matrix R -> Vector R -> Vector R -> R
 computeCost x y theta =
   let m = fromIntegral $ size y
-      a = (x #> theta) + (-1 * y)
+      a = (x #> theta) - y
    in (a <.> a) / (2 * m)
 
 gradientDescent :: Matrix R -> Vector R -> Vector R -> R -> Int -> R -> Vector R

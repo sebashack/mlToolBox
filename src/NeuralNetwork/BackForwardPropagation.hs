@@ -17,8 +17,10 @@ import Numeric.LinearAlgebra.Data
   , fromLists
   , matrix
   , size
+  , tr'
   )
 import Numeric.LinearAlgebra.Data (cmap)
+import Numeric.LinearAlgebra.Devel (mapMatrixWithIndex)
 import Numeric.Natural (Natural)
 import System.Random (randomRIO)
 
@@ -50,9 +52,6 @@ computeCost numLabels x y thetas = go 0 0
     computeHypothesis a0 =
       foldl (\an th -> sigmoidMatrix (th * (addBiasUnit an))) a0 thetas
     --
-    addBiasUnit :: Matrix R -> Matrix R
-    addBiasUnit m = fromLists [[1]] === m
-    --
     go :: Int -> R -> R
     go i cost
       | i >= m = cost
@@ -74,9 +73,60 @@ computeCost numLabels x y thetas = go 0 0
 minimizeBFGS2 ::
      Matrix R
   -> Vector R
+  -> Int
   -> [Matrix R]
   -> Int
   -> MinimizationOpts
   -> Int
   -> Matrix R
-minimizeBFGS2 x y thetas numIters MinimizationOpts {..} regFactor = undefined
+minimizeBFGS2 x y numLabels thetas numIters MinimizationOpts {..} regFactor =
+  undefined
+  where
+    m = size y
+    --
+    computeActivationVals :: Matrix R -> [Matrix R]
+    computeActivationVals a0 =
+      let f vals@[] th = sigmoidMatrix (th * (addBiasUnit a0)) : vals
+          f vals@(an:_) th = sigmoidMatrix (th * (addBiasUnit an)) : vals
+       in foldl f [] thetas
+    --
+    computeErrors :: Matrix R -> [Matrix R] -> [Matrix R]
+    computeErrors dL activationVals =
+      let f vals@(dl:_) (an, th) = ((tr' th) * dl) .* an .* (1 - an) : vals
+       in foldl f [dL] (zip activationVals (reverse thetas))
+    --
+    computeGradients :: Int -> [Matrix R] -> [Matrix R]
+    computeGradients i gradients
+      | i >= m = gradients
+      | otherwise =
+        let xi = (asColumn . flatten) $ x ? [i]
+            a0 = xi
+            activationVals@(aL:_) = computeActivationVals a0
+            yi = round $ y `atIndex` i
+            binEq :: Int -> R
+            binEq n =
+              if yi == n
+                then 1.0
+                else 0.0
+            yik = asColumn $ fromList (binEq <$> [0 .. (numLabels - 1)])
+            errorVals = computeErrors (aL - yik) (tail activationVals)
+            accumGradient grad errVal actVal = grad + (errVal * (tr' actVal))
+         in computeGradients (i + 1) $
+            zipWith3
+              accumGradient
+              gradients
+              errorVals
+              (a0 : reverse activationVals)
+
+elemWiseMult :: Matrix R -> Matrix R -> Matrix R
+elemWiseMult mx1 mx2 =
+  mapMatrixWithIndex (\idx r -> (mx1 `atIndex` idx) * r) mx2
+
+(.*) :: Matrix R -> Matrix R -> Matrix R
+(.*) = elemWiseMult
+
+infixr 8 .*
+
+-- Helpers
+addBiasUnit :: Matrix R -> Matrix R
+addBiasUnit mx = fromLists [[1]] === mx

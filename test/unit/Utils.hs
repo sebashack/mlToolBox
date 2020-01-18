@@ -11,7 +11,7 @@ import System.FilePath.Posix ((</>))
 
 import Reexports (Matrix, R, Vector, fromLists, matrix, toList, toLists)
 
-import Regression.Common (addOnesColumn, splitMatrixOfSamples)
+import Common (addOnesColumn, splitMatrixOfSamples)
 
 doubleEq :: Double -> Double -> Bool
 doubleEq r1 r2 = abs (r1 - r2) <= 0.001

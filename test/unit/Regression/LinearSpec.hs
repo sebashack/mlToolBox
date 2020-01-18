@@ -8,11 +8,9 @@ import Test.Tasty (testGroup)
 import Test.Tasty.Hedgehog (testProperty)
 import Test.Tasty.Hspec (Spec, describe, it, shouldSatisfy, testSpecs)
 
+import Common (MinimizationOpts(..), featureNormalize, getDimensions)
 import Reexports (Matrix, R, Vector, fromList)
 import Regression.Linear (computeCost, gradientDescent, minimizeBFGS2)
-
-import Regression.Common (MinimizationOpts(..), featureNormalize, getDimensions)
-
 import Utils
   ( doubleEq
   , genAlpha

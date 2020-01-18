@@ -37,7 +37,6 @@ gradientDescent _ _ _ alpha numIters regFactor
   | alpha < 0 = error "Learning factor cannot be < 0"
   | numIters < 0 = error "Number of iterations cannot be < 0"
 gradientDescent x y theta alpha depth regFactor = go 0 theta
-    --
   where
     alpha' = scalar alpha
     --

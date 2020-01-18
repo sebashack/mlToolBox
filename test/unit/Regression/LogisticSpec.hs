@@ -6,8 +6,8 @@ import Test.Tasty (TestTree)
 import Test.Tasty (testGroup)
 import Test.Tasty.Hspec (Spec, describe, it, shouldSatisfy, testSpecs)
 
+import Common (MinimizationOpts(..), featureNormalize)
 import Reexports (Matrix, R, Vector, fromList)
-import Regression.Common (MinimizationOpts(..), featureNormalize)
 import Regression.Logistic (computeCost, gradientDescent, minimizeBFGS2)
 import Utils (doubleEq, readLogisticRegressionSample, vectorEq)
 

@@ -2,8 +2,8 @@ module Regression.CommonSpec where
 
 import Test.Tasty.Hspec (Spec, describe, it, shouldSatisfy, testSpecs)
 
+import Common (featureNormalize)
 import Reexports (Matrix, R)
-import Regression.Common (featureNormalize)
 import System.Directory (getCurrentDirectory)
 import System.FilePath.Posix ((</>))
 import Test.Tasty (TestTree, testGroup)
