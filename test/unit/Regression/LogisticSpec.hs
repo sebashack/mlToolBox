@@ -6,9 +6,9 @@ import Test.Tasty (TestTree)
 import Test.Tasty (testGroup)
 import Test.Tasty.Hspec (Spec, describe, it, shouldSatisfy, testSpecs)
 
-import Reexports (Matrix, R, Vector)
-import Regression.Common (MinimizationOpts(..), featureNormalize, toVector)
-import Regression.Logistic (computeCost, minimizeBFGS2, gradientDescent)
+import Reexports (Matrix, R, Vector, fromList)
+import Regression.Common (MinimizationOpts(..), featureNormalize)
+import Regression.Logistic (computeCost, gradientDescent, minimizeBFGS2)
 import Utils (doubleEq, readLogisticRegressionSample, vectorEq)
 
 tests :: IO TestTree
@@ -33,11 +33,11 @@ costFunctionSpec :: Matrix R -> Vector R -> Spec
 costFunctionSpec features values =
   describe "computeCost" $ do
     it "should compute correctly for theta vector [0, 0, 0]" $ do
-      let r = computeCost features values (toVector [0, 0, 0])
+      let r = computeCost features values (fromList [0, 0, 0])
           expectedValue = 0.693147
       r `shouldSatisfy` doubleEq expectedValue
     it "should compute correctly for theta vector [-24, 0.2, 0.2]" $ do
-      let r = computeCost features values (toVector [-24, 0.2, 0.2])
+      let r = computeCost features values (fromList [-24, 0.2, 0.2])
           expectedValue = 0.21833
       r `shouldSatisfy` doubleEq expectedValue
 
@@ -49,11 +49,11 @@ gradientDescentSpec features values = do
           gradientDescent
             (featureNormalize features)
             values
-            (toVector [0, 0, 0])
+            (fromList [0, 0, 0])
             0.01
             165000
             0
-        expectedTheta = toVector [1.718447, 4.012899, 3.743847]
+        expectedTheta = fromList [1.718447, 4.012899, 3.743847]
     theta `shouldSatisfy` (vectorEq expectedTheta)
 
 gradientBFGS2Spec :: Matrix R -> Vector R -> Spec
@@ -64,9 +64,9 @@ gradientBFGS2Spec features values = do
           minimizeBFGS2
             features
             values
-            (toVector [0, 0, 0])
+            (fromList [0, 0, 0])
             400
             (MinimizationOpts 0.01 0.1 0.01)
             0
-        expectedTheta = toVector [-24.439, 0.2004, 0.1956]
+        expectedTheta = fromList [-24.439, 0.2004, 0.1956]
     theta `shouldSatisfy` (vectorEq expectedTheta)

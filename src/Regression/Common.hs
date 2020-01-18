@@ -1,10 +1,6 @@
 module Regression.Common
   ( splitMatrixOfSamples
   , addOnesColumn
-  , toMatrix
-  , toVector
-  , toListMatrix
-  , toListVector
   , getDimensions
   , featureNormalize
   , sigmoid
@@ -17,10 +13,14 @@ import Numeric.LinearAlgebra.Data
   ( Matrix
   , R
   , Vector
+  , (|||)
+  , (¿)
   , cmap
   , cols
+  , flatten
   , fromList
   , fromLists
+  , matrix
   , rows
   , toList
   , toLists
@@ -28,40 +28,19 @@ import Numeric.LinearAlgebra.Data
   )
 import Numeric.LinearAlgebra.Devel (foldVector)
 
-type ListMatrix = [[R]]
-
-type ListVector = [R]
-
 data MinimizationOpts = MinimizationOpts
   { precision :: R
   , tolerance :: R
   , sizeOfFirstTrialStep :: R
   } deriving (Eq)
 
-splitMatrixOfSamples :: ListMatrix -> (ListMatrix, ListVector)
-splitMatrixOfSamples mx = foldr accumFeaturesAndVals ([], []) mx
-  where
-    splitList ls =
-      let (features, val) = splitAt (length ls - 1) ls
-       in (features, head val)
-    accumFeaturesAndVals ls (features, vals) =
-      let (fs, vs) = splitList ls
-       in (fs : features, vs : vals)
+splitMatrixOfSamples :: Matrix R -> (Matrix R, Vector R)
+splitMatrixOfSamples mx =
+  let c = cols mx
+   in (mx ¿ [0 .. (c - 2)], flatten $ mx ¿ [(c - 1)])
 
-toMatrix :: ListMatrix -> Matrix R
-toMatrix = fromLists
-
-toListMatrix :: Matrix R -> ListMatrix
-toListMatrix = toLists
-
-toVector :: ListVector -> Vector R
-toVector = fromList
-
-toListVector :: Vector R -> ListVector
-toListVector = toList
-
-addOnesColumn :: ListMatrix -> ListMatrix
-addOnesColumn = fmap (1.0 :)
+addOnesColumn :: Matrix R -> Matrix R
+addOnesColumn mx = matrix 1 (replicate (rows mx) 1) ||| mx
 
 getDimensions :: Matrix R -> (Int, Int)
 getDimensions mx = (rows mx, cols mx)

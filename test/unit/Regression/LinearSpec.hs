@@ -8,15 +8,10 @@ import Test.Tasty (testGroup)
 import Test.Tasty.Hedgehog (testProperty)
 import Test.Tasty.Hspec (Spec, describe, it, shouldSatisfy, testSpecs)
 
-import Reexports (Matrix, R, Vector)
-import Regression.Linear (computeCost, minimizeBFGS2, gradientDescent)
+import Reexports (Matrix, R, Vector, fromList)
+import Regression.Linear (computeCost, gradientDescent, minimizeBFGS2)
 
-import Regression.Common
-  ( MinimizationOpts(..)
-  , featureNormalize
-  , getDimensions
-  , toVector
-  )
+import Regression.Common (MinimizationOpts(..), featureNormalize, getDimensions)
 
 import Utils
   ( doubleEq
@@ -58,19 +53,19 @@ costFunctionSpec :: Matrix R -> Vector R -> Spec
 costFunctionSpec features values =
   describe "computeCost" $ do
     it "should compute correctly for theta vector [0, 0, 0]" $ do
-      let r = computeCost features values (toVector [0, 0, 0])
+      let r = computeCost features values (fromList [0, 0, 0])
           expectedValue = 65591548106.45744
       r `shouldSatisfy` doubleEq expectedValue
     it "should compute correctly for theta vector [25, 26, 27]" $ do
-      let r = computeCost features values (toVector [25, 26, 27])
+      let r = computeCost features values (fromList [25, 26, 27])
           expectedValue = 47251185844.64893
       r `shouldSatisfy` doubleEq expectedValue
     it "should compute correctly for theta vector [1500, 227, 230]" $ do
-      let r = computeCost features values (toVector [1500, 227, 230])
+      let r = computeCost features values (fromList [1500, 227, 230])
           expectedValue = 11433546085.01064
       r `shouldSatisfy` doubleEq expectedValue
     it "should compute correctly for theta vector [-15.03, -27.123, -59.675]" $ do
-      let r = computeCost features values (toVector [-15.03, -27.123, -59.675])
+      let r = computeCost features values (fromList [-15.03, -27.123, -59.675])
           expectedValue = 88102482793.02190
       r `shouldSatisfy` doubleEq expectedValue
 
@@ -82,11 +77,11 @@ gradientDescentSpec features values = do
           gradientDescent
             (featureNormalize features)
             values
-            (toVector [0, 0, 0])
+            (fromList [0, 0, 0])
             0.1
             50
             0
-        expectedTheta = toVector [338658.24925, 104127.51560, -172.20533]
+        expectedTheta = fromList [338658.24925, 104127.51560, -172.20533]
     theta `shouldSatisfy` (vectorEq expectedTheta)
   it
     "should compute correctly for theta starting at [0, 0, 0], alpha = 0.01 and 500 iterations" $ do
@@ -94,11 +89,11 @@ gradientDescentSpec features values = do
           gradientDescent
             (featureNormalize features)
             values
-            (toVector [0, 0, 0])
+            (fromList [0, 0, 0])
             0.01
             500
             0
-        expectedTheta = toVector [338175.98397, 103831.11737, 103.03073]
+        expectedTheta = fromList [338175.98397, 103831.11737, 103.03073]
     theta `shouldSatisfy` (vectorEq expectedTheta)
   it
     "should compute correctly for theta starting at [0, 0, 0], alpha = 0.001 and 1000 iterations" $ do
@@ -106,11 +101,11 @@ gradientDescentSpec features values = do
           gradientDescent
             (featureNormalize features)
             values
-            (toVector [0, 0, 0])
+            (fromList [0, 0, 0])
             0.001
             1000
             0
-        expectedTheta = toVector [215244.48211, 61233.08697, 20186.40938]
+        expectedTheta = fromList [215244.48211, 61233.08697, 20186.40938]
     theta `shouldSatisfy` (vectorEq expectedTheta)
   it "decreases the value of the cost function the more iterations are computed" $ do
     let normalizedFeatures = featureNormalize features
@@ -118,7 +113,7 @@ gradientDescentSpec features values = do
           gradientDescent
             normalizedFeatures
             values
-            (toVector [0, 0, 0])
+            (fromList [0, 0, 0])
             0.01
             numIters
             0
@@ -134,11 +129,11 @@ gradientBFGS2Spec features values = do
           minimizeBFGS2
             (featureNormalize features)
             values
-            (toVector [0, 0, 0])
+            (fromList [0, 0, 0])
             500
             (MinimizationOpts 0.01 0.1 0.01)
             0
-        expectedTheta = toVector [340412.659, 110631.0502, -6649.474]
+        expectedTheta = fromList [340412.659, 110631.0502, -6649.474]
     theta `shouldSatisfy` (vectorEq expectedTheta)
 
 -- Properties
@@ -152,7 +147,7 @@ costFunctionDecreasesTheMoreIterationsOfGradientDescent =
           gradientDescent
             normalizedMatrix
             values
-            (toVector $ replicate (snd $ getDimensions matrix) 0)
+            (fromList $ replicate (snd $ getDimensions matrix) 0)
             alpha
             numIters
             0
