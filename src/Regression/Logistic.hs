@@ -3,7 +3,7 @@
 module Regression.Logistic
   ( computeCost
   , gradientDescent
-  , gradientBFGS2
+  , minimizeBFGS2
   ) where
 
 import Numeric.GSL.Minimization (MinimizeMethodD(VectorBFGS2), minimizeVD)
@@ -55,7 +55,7 @@ gradientDescent x y theta alpha depth regFactor = go 0 theta
       let delta = (tr' x) #> ((sigmoidVec (x #> th)) - y)
        in (delta + penalizedTheta) / scalar m
 
-gradientBFGS2 ::
+minimizeBFGS2 ::
      Matrix R
   -> Vector R
   -> Vector R
@@ -63,10 +63,10 @@ gradientBFGS2 ::
   -> MinimizationOpts
   -> R
   -> Vector R
-gradientBFGS2 _ _ _ numIters _ regFactor
+minimizeBFGS2 _ _ _ numIters _ regFactor
   | regFactor < 0 = error "Regularization factor cannot be < 0"
   | numIters < 0 = error "Number of iterations cannot be < 0"
-gradientBFGS2 x y theta numIters MinimizationOpts {..} regFactor =
+minimizeBFGS2 x y theta numIters MinimizationOpts {..} regFactor =
   let (params, _) =
         minimizeVD
           VectorBFGS2

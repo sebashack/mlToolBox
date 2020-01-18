@@ -9,7 +9,7 @@ import Test.Tasty.Hedgehog (testProperty)
 import Test.Tasty.Hspec (Spec, describe, it, shouldSatisfy, testSpecs)
 
 import Reexports (Matrix, R, Vector)
-import Regression.Linear (computeCost, gradientBFGS2, gradientDescent)
+import Regression.Linear (computeCost, minimizeBFGS2, gradientDescent)
 
 import Regression.Common
   ( MinimizationOpts(..)
@@ -131,7 +131,7 @@ gradientBFGS2Spec :: Matrix R -> Vector R -> Spec
 gradientBFGS2Spec features values = do
   it "should compute correctly for theta starting at [0, 0, 0], 500 iterations" $ do
     let theta =
-          gradientBFGS2
+          minimizeBFGS2
             (featureNormalize features)
             values
             (toVector [0, 0, 0])

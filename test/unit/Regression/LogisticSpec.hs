@@ -8,7 +8,7 @@ import Test.Tasty.Hspec (Spec, describe, it, shouldSatisfy, testSpecs)
 
 import Reexports (Matrix, R, Vector)
 import Regression.Common (MinimizationOpts(..), featureNormalize, toVector)
-import Regression.Logistic (computeCost, gradientBFGS2, gradientDescent)
+import Regression.Logistic (computeCost, minimizeBFGS2, gradientDescent)
 import Utils (doubleEq, readLogisticRegressionSample, vectorEq)
 
 tests :: IO TestTree
@@ -61,7 +61,7 @@ gradientBFGS2Spec features values = do
   it
     "should compute correctly for theta starting at [0, 0, 0], and 400 iterations" $ do
     let theta =
-          gradientBFGS2
+          minimizeBFGS2
             features
             values
             (toVector [0, 0, 0])
