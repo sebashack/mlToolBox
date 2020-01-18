@@ -27,6 +27,7 @@ library:
   dependencies:
   - hmatrix
   - hmatrix-gsl
+  - random
 
 executables:
   mlToolBox-exe:
