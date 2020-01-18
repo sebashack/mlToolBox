@@ -1,10 +1,13 @@
-module Regression.Common
+
+{-# LANGUAGE FlexibleContexts #-}
+
+module Common
   ( splitMatrixOfSamples
   , addOnesColumn
   , getDimensions
   , featureNormalize
   , sigmoid
-  , sigmoidVec
+  , sigmoidMatrix
   , regularizeCost
   , MinimizationOpts(..)
   ) where
@@ -26,6 +29,7 @@ import Numeric.LinearAlgebra.Data
   , toLists
   , tr'
   )
+import Numeric.LinearAlgebra (Container)
 import Numeric.LinearAlgebra.Devel (foldVector)
 
 data MinimizationOpts = MinimizationOpts
@@ -48,8 +52,8 @@ getDimensions mx = (rows mx, cols mx)
 sigmoid :: R -> R
 sigmoid z = 1 / (1 + exp (-1 * z))
 
-sigmoidVec :: Vector R -> Vector R
-sigmoidVec = cmap sigmoid
+sigmoidMatrix :: Container c R => c R -> c R
+sigmoidMatrix = cmap sigmoid
 
 regularizeCost :: Int -> Vector R -> R -> R -> R
 regularizeCost m theta lambda cost =

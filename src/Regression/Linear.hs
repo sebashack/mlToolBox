@@ -21,7 +21,7 @@ import Numeric.LinearAlgebra.Data
   , toList
   , tr'
   )
-import Regression.Common (MinimizationOpts(..))
+import Common (MinimizationOpts(..))
 
 computeCost :: Matrix R -> Vector R -> Vector R -> R
 computeCost x y theta =

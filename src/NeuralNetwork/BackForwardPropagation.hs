@@ -18,11 +18,12 @@ import Numeric.LinearAlgebra.Data
   , matrix
   , size
   )
+import Numeric.LinearAlgebra.Data (cmap)
 import Numeric.Natural (Natural)
 import System.Random (randomRIO)
 
+import Common (MinimizationOpts(..), sigmoid, sigmoidMatrix)
 import NeuralNetwork.Types (Layer(numUnits), Network(..))
-import Numeric.LinearAlgebra.Data (cmap)
 
 genRandomThetas :: R -> Network -> IO [Matrix R]
 genRandomThetas epsilon Network {..} =
@@ -70,8 +71,12 @@ computeCost numLabels x y thetas = go 0 0
             v = (((-1 * yik) <.> a) - ((1 - yik) <.> b))
          in go (i + 1) (cost + v)
 
-sigmoid :: R -> R
-sigmoid z = 1 / (1 + exp (-1 * z))
-
-sigmoidMatrix :: Matrix R -> Matrix R
-sigmoidMatrix = cmap sigmoid
+minimizeBFGS2 ::
+     Matrix R
+  -> Vector R
+  -> [Matrix R]
+  -> Int
+  -> MinimizationOpts
+  -> Int
+  -> Matrix R
+minimizeBFGS2 x y thetas numIters MinimizationOpts {..} regFactor = undefined

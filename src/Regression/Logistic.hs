@@ -23,11 +23,11 @@ import Numeric.LinearAlgebra.Data
   , toList
   , tr'
   )
-import Regression.Common (MinimizationOpts(..), sigmoid, sigmoidVec)
+import Common (MinimizationOpts(..), sigmoid, sigmoidMatrix)
 
 computeCost :: Matrix R -> Vector R -> Vector R -> R
 computeCost x y theta =
-  let s = sigmoidVec (x #> theta)
+  let s = sigmoidMatrix (x #> theta)
       m = size y
    in ((y <.> log (s)) + ((1 - y) <.> log (1 - s))) / fromIntegral (-m)
 
@@ -52,7 +52,7 @@ gradientDescent x y theta alpha depth regFactor = go 0 theta
     penalizedTheta = fromList $ 0 : (tail $ ((* regFactor) <$> toList theta))
     --
     computeDelta th =
-      let delta = (tr' x) #> ((sigmoidVec (x #> th)) - y)
+      let delta = (tr' x) #> ((sigmoidMatrix (x #> th)) - y)
        in (delta + penalizedTheta) / scalar m
 
 minimizeBFGS2 ::
@@ -87,5 +87,5 @@ minimizeBFGS2 x y theta numIters MinimizationOpts {..} regFactor =
     --
     computeGradients :: Vector R -> Vector R
     computeGradients th =
-      let delta = (tr' x) #> ((sigmoidVec (x #> th)) - y)
+      let delta = (tr' x) #> ((sigmoidMatrix (x #> th)) - y)
        in (delta + penalizedTheta) / scalar m
