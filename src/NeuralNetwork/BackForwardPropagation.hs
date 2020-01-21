@@ -1,8 +1,13 @@
 {-# LANGUAGE RecordWildCards #-}
 
-module NeuralNetwork.BackForwardPropagation where
+module NeuralNetwork.BackForwardPropagation
+  ( genRandomThetas
+  , computeCost
+  , minimizeBFGS2
+  ) where
 
 import Control.Monad (mapM)
+import Numeric.GSL.Minimization (MinimizeMethodD(VectorBFGS2), minimizeVD)
 import Numeric.LinearAlgebra ((<.>))
 import Numeric.LinearAlgebra.Data
   ( Matrix
@@ -19,12 +24,12 @@ import Numeric.LinearAlgebra.Data
   , size
   , tr'
   )
-import Numeric.LinearAlgebra.Data (cmap)
+import Numeric.LinearAlgebra.Data (cmap, reshape, takesV, vjoin)
 import Numeric.LinearAlgebra.Devel (mapMatrixWithIndex)
 import Numeric.Natural (Natural)
 import System.Random (randomRIO)
 
-import Common (MinimizationOpts(..), sigmoid, sigmoidMatrix)
+import Common (MinimizationOpts(..), getDimensions, sigmoid, sigmoidMatrix)
 import NeuralNetwork.Types (Layer(numUnits), Network(..))
 
 genRandomThetas :: R -> Network -> IO [Matrix R]
@@ -78,11 +83,46 @@ minimizeBFGS2 ::
   -> Int
   -> MinimizationOpts
   -> Int
-  -> Matrix R
+  -> [Matrix R]
 minimizeBFGS2 x y numLabels thetas numIters MinimizationOpts {..} regFactor =
-  undefined
+  let (flattenedParams, dimensions) = flattenParameters thetas
+      (minParams, _) =
+        minimizeVD
+          VectorBFGS2
+          precision
+          numIters
+          sizeOfFirstTrialStep
+          tolerance
+          (computeCost' dimensions)
+          (computeGradients' dimensions)
+          flattenedParams
+   in unflattenParameters dimensions minParams
   where
     m = size y
+    --
+    flattenParameters :: [Matrix R] -> (Vector R, [(Int, Int)])
+    flattenParameters mtxs =
+      let (vecs, dims) =
+            unzip $ (\mx -> (flatten mx, getDimensions mx)) <$> mtxs
+       in (vjoin vecs, dims)
+    --
+    unflattenParameters :: [(Int, Int)] -> Vector R -> [Matrix R]
+    unflattenParameters dims params =
+      let sizes = uncurry (*) <$> dims
+       in zipWith
+            (\vec (ncols, _) -> reshape ncols vec)
+            (takesV sizes params)
+            dims
+    --
+    computeCost' :: [(Int, Int)] -> Vector R -> R
+    computeCost' dims params =
+      computeCost numLabels x y (unflattenParameters dims params)
+    --
+    computeGradients' :: [(Int, Int)] -> Vector R -> Vector R
+    computeGradients' dims gradients =
+      fst $
+      flattenParameters $
+      computeGradients 0 (unflattenParameters dims gradients)
     --
     computeActivationVals :: Matrix R -> [Matrix R]
     computeActivationVals a0 =
