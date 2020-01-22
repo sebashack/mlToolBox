@@ -9,7 +9,16 @@ import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import System.FilePath.Posix ((</>))
 
-import Reexports (Matrix, R, Vector, fromLists, matrix, toList, toLists)
+import Reexports
+  ( Matrix
+  , R
+  , Vector
+  , fromList
+  , fromLists
+  , matrix
+  , toList
+  , toLists
+  )
 
 import Common (addOnesColumn, splitMatrixOfSamples)
 
@@ -76,3 +85,20 @@ readLogisticRegressionSample dataDir = do
         addOnesColumn . fromLists . V.toList . fromRight V.empty $
         logisticRegressionData
   return (features, vals)
+
+readBackForwardSample :: FilePath -> IO (Matrix R, Vector R, Matrix R, Matrix R)
+readBackForwardSample dataDir = do
+  let pixelsFile = dataDir </> "handwritingPixels.csv"
+      numbersFile = dataDir </> "handwritingNumbers.csv"
+      weights0File = dataDir </> "handwritingWeights0.csv"
+      weights1File = dataDir </> "handwritingWeights1.csv"
+  pixelsData <- decode NoHeader <$> LB.readFile pixelsFile
+  numbersData <- decode NoHeader <$> LB.readFile numbersFile
+  weights0Data <- decode NoHeader <$> LB.readFile weights0File
+  weights1Data <- decode NoHeader <$> LB.readFile weights1File
+  let pixelsMatrix = fromLists . V.toList . fromRight V.empty $ pixelsData
+      numbersVector =
+        fromList . concat . V.toList . fromRight V.empty $ numbersData
+      weights0Matrix = fromLists . V.toList . fromRight V.empty $ weights0Data
+      weights1Matrix = fromLists . V.toList . fromRight V.empty $ weights1Data
+  return $ (pixelsMatrix, numbersVector, weights0Matrix, weights1Matrix)

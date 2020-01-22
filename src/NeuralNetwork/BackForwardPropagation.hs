@@ -8,7 +8,7 @@ module NeuralNetwork.BackForwardPropagation
 
 import Control.Monad (mapM)
 import Numeric.GSL.Minimization (MinimizeMethodD(VectorBFGS2), minimizeVD)
-import Numeric.LinearAlgebra ((<.>))
+import Numeric.LinearAlgebra (( #> ), (<.>))
 import Numeric.LinearAlgebra.Data
   ( Matrix
   , R
@@ -53,16 +53,16 @@ computeCost numLabels x y thetas = go 0 0
   where
     m = size y
     --
-    computeHypothesis :: Matrix R -> Matrix R
+    computeHypothesis :: Vector R -> Vector R
     computeHypothesis a0 =
-      foldl (\an th -> sigmoidMatrix (th * (addBiasUnit an))) a0 thetas
+      foldl (\an th -> sigmoidMatrix (th #> (addBiasUnit' an))) a0 thetas
     --
     go :: Int -> R -> R
     go i cost
-      | i >= m = cost
+      | i >= m = cost / fromIntegral m
       | otherwise =
-        let xi = (asColumn . flatten) $ x ? [i]
-            hypothesisVec = flatten $ computeHypothesis xi
+        let xi = flatten $ x ? [i]
+            hypothesisVec = computeHypothesis xi
             yi = round $ y `atIndex` i
             binEq :: Int -> R
             binEq n =
@@ -71,8 +71,8 @@ computeCost numLabels x y thetas = go 0 0
                 else 0.0
             yik = fromList (binEq <$> [0 .. (numLabels - 1)])
             a = cmap log hypothesisVec
-            b = cmap log (1 - hypothesisVec)
-            v = (((-1 * yik) <.> a) - ((1 - yik) <.> b))
+            b = cmap (\r -> log (1 - r)) hypothesisVec
+            v = ((-1 * yik) <.> a) - ((1 - yik) <.> b)
          in go (i + 1) (cost + v)
 
 minimizeBFGS2 ::
@@ -170,3 +170,6 @@ infixr 8 .*
 -- Helpers
 addBiasUnit :: Matrix R -> Matrix R
 addBiasUnit mx = fromLists [[1]] === mx
+
+addBiasUnit' :: Vector R -> Vector R
+addBiasUnit' vec = vjoin [fromList [1], vec]
