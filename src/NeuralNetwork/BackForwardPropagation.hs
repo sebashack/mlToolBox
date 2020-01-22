@@ -8,7 +8,7 @@ module NeuralNetwork.BackForwardPropagation
 
 import Control.Monad (mapM)
 import Numeric.GSL.Minimization (MinimizeMethodD(VectorBFGS2), minimizeVD)
-import Numeric.LinearAlgebra (( #> ), (<.>))
+import Numeric.LinearAlgebra (( #> ), (<.>), (<>), sumElements)
 import Numeric.LinearAlgebra.Data
   ( Matrix
   , R
@@ -17,19 +17,29 @@ import Numeric.LinearAlgebra.Data
   , (?)
   , asColumn
   , atIndex
+  , cmap
   , flatten
   , fromList
   , fromLists
   , matrix
+  , reshape
   , size
+  , takesV
   , tr'
+  , vjoin
   )
-import Numeric.LinearAlgebra.Data (cmap, reshape, takesV, vjoin)
 import Numeric.LinearAlgebra.Devel (mapMatrixWithIndex)
 import Numeric.Natural (Natural)
+import Prelude hiding ((<>))
 import System.Random (randomRIO)
 
-import Common (MinimizationOpts(..), getDimensions, sigmoid, sigmoidMatrix)
+import Common
+  ( MinimizationOpts(..)
+  , addOnesColumn
+  , getDimensions
+  , sigmoid
+  , sigmoidMatrix
+  )
 import NeuralNetwork.Types (Layer(numUnits), Network(..))
 
 genRandomThetas :: R -> Network -> IO [Matrix R]
@@ -49,31 +59,24 @@ genRandomThetas epsilon Network {..} =
           ((\r -> r * (2 * epsilon) - epsilon) <$> elts)
 
 computeCost :: Int -> Matrix R -> Vector R -> [Matrix R] -> R
-computeCost numLabels x y thetas = go 0 0
+computeCost numLabels x y thetas = cost
   where
     m = size y
     --
-    computeHypothesis :: Vector R -> Vector R
-    computeHypothesis a0 =
-      foldl (\an th -> sigmoidMatrix (th #> (addBiasUnit' an))) a0 thetas
+    hypotheses =
+      foldl (\an th -> sigmoidMatrix ((addOnesColumn an) <> (tr' th))) x thetas
     --
-    go :: Int -> R -> R
-    go i cost
-      | i >= m = cost / fromIntegral m
-      | otherwise =
-        let xi = flatten $ x ? [i]
-            hypothesisVec = computeHypothesis xi
-            yi = round $ y `atIndex` i
-            binEq :: Int -> R
-            binEq n =
-              if yi == n
-                then 1.0
-                else 0.0
-            yik = fromList (binEq <$> [0 .. (numLabels - 1)])
-            a = cmap log hypothesisVec
-            b = cmap (\r -> log (1 - r)) hypothesisVec
-            v = ((-1 * yik) <.> a) - ((1 - yik) <.> b)
-         in go (i + 1) (cost + v)
+    cost =
+      let rowElemsCost i k r =
+            let yik =
+                  if (round $ y `atIndex` i) == k
+                    then 1.0
+                    else 0.0
+             in (-yik * (log (r))) - ((1 - yik) * log (1 - r))
+          summation =
+            sumElements $
+            mapMatrixWithIndex (\(i, k) r -> rowElemsCost i k r) hypotheses
+       in summation / fromIntegral m
 
 minimizeBFGS2 ::
      Matrix R
