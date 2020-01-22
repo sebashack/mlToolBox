@@ -32,7 +32,7 @@ tests = do
       testSpecs
       [ costFunctionSpec linearRegressionMatrix linearRegressionValues
       , gradientDescentSpec linearRegressionMatrix linearRegressionValues
-      , gradientBFGS2Spec linearRegressionMatrix linearRegressionValues
+      , minimizeBFGS2Spec linearRegressionMatrix linearRegressionValues
       ]
   let properties =
         uncurry testProperty <$>
@@ -120,8 +120,8 @@ gradientDescentSpec features values = do
           (take 100 $ iterate (+ 10) 1)
     costFValues `shouldSatisfy` isDescending
 
-gradientBFGS2Spec :: Matrix R -> Vector R -> Spec
-gradientBFGS2Spec features values = do
+minimizeBFGS2Spec :: Matrix R -> Vector R -> Spec
+minimizeBFGS2Spec features values = do
   it "should compute correctly for theta starting at [0, 0, 0], 500 iterations" $ do
     let theta =
           minimizeBFGS2

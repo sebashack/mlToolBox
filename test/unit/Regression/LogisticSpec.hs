@@ -23,7 +23,7 @@ tests = do
       testSpecs
       [ costFunctionSpec logisticRegressionMatrix logisticRegressionValues
       , gradientDescentSpec logisticRegressionMatrix logisticRegressionValues
-      , gradientBFGS2Spec logisticRegressionMatrix logisticRegressionValues
+      , minimizeBFGS2Spec logisticRegressionMatrix logisticRegressionValues
       ]
   return $
     testGroup "LogisticRegression" [testGroup "Logistic Regression specs" specs]
@@ -56,8 +56,8 @@ gradientDescentSpec features values = do
         expectedTheta = fromList [1.718447, 4.012899, 3.743847]
     theta `shouldSatisfy` (vectorEq expectedTheta)
 
-gradientBFGS2Spec :: Matrix R -> Vector R -> Spec
-gradientBFGS2Spec features values = do
+minimizeBFGS2Spec :: Matrix R -> Vector R -> Spec
+minimizeBFGS2Spec features values = do
   it
     "should compute correctly for theta starting at [0, 0, 0], and 400 iterations" $ do
     let theta =
